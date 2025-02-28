@@ -101,7 +101,8 @@ func fillInt(value reflect.Value, c *ByteConsumer) {
 	if !canSet(value) {
 		return
 	}
-	value.SetInt(-1)
+	val := c.Int64(value.Type().Size())
+	value.SetInt(val)
 }
 
 func fillUint(value reflect.Value, c *ByteConsumer) {
