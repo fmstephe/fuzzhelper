@@ -29,7 +29,7 @@ func TestFill_Simple(t *testing.T) {
 		BoolValue:    true,
 		StringValue:  "string",
 		ArrayValue:   [4]int{-2, -3, -4, -5},
-		SliceValue:   []uint{1, 1, 1, 1},
+		SliceValue:   []uint{2, 3, 4, 5},
 		MapValue:     map[string]float64{"string": 1.234},
 	}
 
@@ -57,11 +57,18 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c := NewByteConsumer([]byte{})
 	// IntValueField
 	c.pushInt64(-1, NativeBytes)
+	// UintValueField
+	c.pushUint64(1, NativeBytes)
 	// ArrayValue elements
 	c.pushInt64(-2, NativeBytes)
 	c.pushInt64(-3, NativeBytes)
 	c.pushInt64(-4, NativeBytes)
 	c.pushInt64(-5, NativeBytes)
+	// SliceValue elements
+	c.pushUint64(2, NativeBytes)
+	c.pushUint64(3, NativeBytes)
+	c.pushUint64(4, NativeBytes)
+	c.pushUint64(5, NativeBytes)
 
 	return c
 }

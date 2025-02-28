@@ -110,7 +110,8 @@ func fillUint(value reflect.Value, c *ByteConsumer) {
 	if !canSet(value) {
 		return
 	}
-	value.SetUint(1)
+	val := c.Uint64(value.Type().Size())
+	value.SetUint(val)
 }
 
 func fillFloat(value reflect.Value, c *ByteConsumer) {
