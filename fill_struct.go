@@ -12,7 +12,7 @@ func Fill(value any) {
 
 func fill(value reflect.Value) {
 	if !value.CanSet() {
-		println("can't set")
+		print("can't set: ")
 		// The initial value passed into this method must be an
 		// instantiated struct/map/array/slice or a pointer to one of
 		// these.  Once we drill past this unsettable level we will
@@ -49,7 +49,7 @@ func fill(value reflect.Value) {
 			fill(value.Elem())
 		}
 	} else {
-		println("can set")
+		print("  can set: ")
 		// Switch on the next expected kind
 		switch value.Kind() {
 		case reflect.String:
@@ -77,10 +77,12 @@ func fill(value reflect.Value) {
 			value.SetComplex(1 + 2i)
 
 		case reflect.Array, reflect.Slice:
+			println("slice/array")
 			fillSliceArray(value)
 			return
 
 		case reflect.Map:
+			println("map")
 			fillMap(value)
 			return
 
