@@ -115,6 +115,11 @@ func (c *ByteConsumer) String(length int) string {
 	return string(validRunes)
 }
 
+func (c *ByteConsumer) Bool() bool {
+	bytes := c.Bytes(1)
+	return bytes[0]%2 == 1
+}
+
 var nativeInt = 0
 
 const (
@@ -149,6 +154,7 @@ func (c *ByteConsumer) pushUint64(value uint64, bytes uintptr) {
 	}
 }
 
+// test only
 func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
 	switch bytes {
 	case 8:
@@ -167,4 +173,12 @@ func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
 // test only
 func (c *ByteConsumer) pushString(str string) {
 	c.pushBytes([]byte(str))
+}
+
+func (c *ByteConsumer) pushBool(value bool) {
+	if value {
+		c.pushBytes([]byte{1})
+	} else {
+		c.pushBytes([]byte{0})
+	}
 }

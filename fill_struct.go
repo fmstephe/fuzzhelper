@@ -93,7 +93,8 @@ func fillBool(value reflect.Value, c *ByteConsumer) {
 	if !canSet(value) {
 		return
 	}
-	value.SetBool(true)
+	val := c.Bool()
+	value.SetBool(val)
 }
 
 func fillInt(value reflect.Value, c *ByteConsumer) {

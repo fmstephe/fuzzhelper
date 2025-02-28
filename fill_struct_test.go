@@ -12,7 +12,8 @@ func TestFill_Simple(t *testing.T) {
 		UintValue    uint
 		FloatValue   float64
 		ComplexValue complex64
-		BoolValue    bool
+		Bool1Value   bool
+		Bool2Value   bool
 		StringValue  string
 		ArrayValue   [4]int
 		SliceValue   []uint
@@ -26,7 +27,8 @@ func TestFill_Simple(t *testing.T) {
 		UintValue:    1,
 		FloatValue:   1.234,
 		ComplexValue: 1 + 2i,
-		BoolValue:    true,
+		Bool1Value:   true,
+		Bool2Value:   false,
 		StringValue:  "string",
 		ArrayValue:   [4]int{-2, -3, -4, -5},
 		SliceValue:   []uint{2, 3, 4, 5},
@@ -55,10 +57,14 @@ func TestFill_Simple(t *testing.T) {
 func buildSimpleTestByteConsumer() *ByteConsumer {
 	// Set all the fill values here
 	c := NewByteConsumer([]byte{})
-	// IntValueField
+	// IntValue field
 	c.pushInt64(-1, NativeBytes)
-	// UintValueField
+	// UintValue field
 	c.pushUint64(1, NativeBytes)
+	// Bool1Value field
+	c.pushBool(true)
+	// Bool2Value field
+	c.pushBool(false)
 	// ArrayValue elements
 	c.pushInt64(-2, NativeBytes)
 	c.pushInt64(-3, NativeBytes)
