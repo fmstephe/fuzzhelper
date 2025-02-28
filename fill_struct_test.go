@@ -15,6 +15,7 @@ func TestFill_int(t *testing.T) {
 		StringValue string
 		ArrayValue  [4]int
 		SliceValue  []uint
+		MapValue    map[string]float64
 	}
 
 	expected := testStruct{
@@ -25,6 +26,7 @@ func TestFill_int(t *testing.T) {
 		StringValue: "string",
 		ArrayValue:  [4]int{-1, -1, -1, -1},
 		SliceValue:  []uint{1, 1, 1, 1},
+		MapValue:    map[string]float64{"string": 1.234},
 	}
 
 	// Test value

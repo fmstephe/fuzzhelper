@@ -27,7 +27,11 @@ func fill(value reflect.Value) {
 			return
 
 		case reflect.Map:
-			// TODO handle maps
+			println("map")
+			if value.IsNil() {
+				return
+			}
+			fillMap(value)
 			return
 
 		case reflect.Struct:
@@ -77,7 +81,7 @@ func fill(value reflect.Value) {
 			return
 
 		case reflect.Map:
-			// TODO handle maps
+			fillMap(value)
 			return
 
 		case reflect.Struct:
@@ -134,4 +138,30 @@ func fillSliceArray(value reflect.Value) {
 	for i := 0; i < value.Len(); i++ {
 		fill(value.Index(i))
 	}
+}
+
+func fillMap(value reflect.Value) {
+	mapType := value.Type()
+	keyType := mapType.Key()
+	valType := mapType.Elem()
+
+	// Set only a single element in the map
+	// This is all we can do right now because we always fill the same value for every type
+	newMap := reflect.MakeMap(mapType)
+
+	// Create the key
+	mapKeyP := reflect.New(keyType)
+	mapKey := mapKeyP.Elem()
+	fill(mapKey)
+
+	// Create the value
+	mapValP := reflect.New(valType)
+	mapVal := mapValP.Elem()
+	fill(mapVal)
+
+	// Add key/val to map
+	newMap.SetMapIndex(mapKey, mapVal)
+
+	// Set value to be the new map
+	value.Set(newMap)
 }
