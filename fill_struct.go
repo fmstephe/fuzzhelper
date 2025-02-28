@@ -85,7 +85,8 @@ func fillString(value reflect.Value, c *ByteConsumer) {
 	if !canSet(value) {
 		return
 	}
-	value.SetString("string")
+	val := c.String(6)
+	value.SetString(val)
 }
 
 func fillBool(value reflect.Value, c *ByteConsumer) {
