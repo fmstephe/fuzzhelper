@@ -60,9 +60,9 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	// Set all the fill values here
 	c := NewByteConsumer([]byte{})
 	// IntValue field
-	c.pushInt64(-1, NativeBytes)
+	c.pushInt64(-1, BytesForNative)
 	// UintValue field
-	c.pushUint64(1, NativeBytes)
+	c.pushUint64(1, BytesForNative)
 	// Float64Value field
 	c.pushFloat64(3.1415, BytesFor64)
 	// Float32Value field
@@ -72,18 +72,18 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	// Bool2Value field
 	c.pushBool(false)
 	// ArrayValue elements
-	c.pushInt64(-2, NativeBytes)
-	c.pushInt64(-3, NativeBytes)
-	c.pushInt64(-4, NativeBytes)
-	c.pushInt64(-5, NativeBytes)
+	c.pushInt64(-2, BytesForNative)
+	c.pushInt64(-3, BytesForNative)
+	c.pushInt64(-4, BytesForNative)
+	c.pushInt64(-5, BytesForNative)
 	// SliceValue elements
-	c.pushUint64(2, NativeBytes)
-	c.pushUint64(3, NativeBytes)
-	c.pushUint64(4, NativeBytes)
-	c.pushUint64(5, NativeBytes)
+	c.pushUint64(2, BytesForNative)
+	c.pushUint64(3, BytesForNative)
+	c.pushUint64(4, BytesForNative)
+	c.pushUint64(5, BytesForNative)
 
 	// MapValue map entry
-	c.pushFloat64(5.1415, NativeBytes)
+	c.pushFloat64(5.1415, BytesFor64)
 	return c
 }
 

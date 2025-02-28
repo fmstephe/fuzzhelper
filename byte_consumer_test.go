@@ -15,8 +15,8 @@ import (
 func TestByteConsumer_PushAndGetInt64(t *testing.T) {
 	consumer := NewByteConsumer([]byte{})
 
-	consumer.pushInt64(-1, NativeBytes)
-	assert.Equal(t, int64(-1), consumer.Int64(NativeBytes))
+	consumer.pushInt64(-1, BytesForNative)
+	assert.Equal(t, int64(-1), consumer.Int64(BytesForNative))
 	//
 	consumer.pushInt64(-1, BytesFor64)
 	assert.Equal(t, int64(-1), consumer.Int64(BytesFor64))

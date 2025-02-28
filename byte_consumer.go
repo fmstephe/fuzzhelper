@@ -14,11 +14,11 @@ import (
 var nativeInt = 0
 
 const (
-	NativeBytes = uintptr(unsafe.Sizeof(nativeInt))
-	BytesFor64  = 8
-	BytesFor32  = 4
-	BytesFor16  = 2
-	BytesFor8   = 1
+	BytesForNative = uintptr(unsafe.Sizeof(nativeInt))
+	BytesFor64     = 8
+	BytesFor32     = 4
+	BytesFor16     = 2
+	BytesFor8      = 1
 )
 
 type ByteConsumer struct {
