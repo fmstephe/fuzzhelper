@@ -11,11 +11,7 @@ func Fill(value any) {
 }
 
 func fill(value reflect.Value) {
-	// Switch on the next expected kind
 	switch value.Kind() {
-	case reflect.String:
-		fillString(value)
-
 	case reflect.Bool:
 		fillBool(value)
 
@@ -25,36 +21,42 @@ func fill(value reflect.Value) {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		fillUint(value)
 
+	case reflect.Uintptr:
+		// Uintptr is ignored
+
 	case reflect.Float32, reflect.Float64:
 		fillFloat(value)
 
 	case reflect.Complex64, reflect.Complex128:
 		fillComplex(value)
 
-	case reflect.Slice:
-		fillSlice(value)
-		return
-
 	case reflect.Array:
 		fillArray(value)
-		return
-
-	case reflect.Map:
-		fillMap(value)
-		return
-
-	case reflect.Struct:
-		fillStruct(value)
 
 	case reflect.Chan:
 		fillChan(value)
 
-	case reflect.Pointer:
-		fillPointer(value)
+	case reflect.Func:
+		// functions are ignored
 
 	case reflect.Interface:
 		// Can't do anything here - we can't instantiate an interface type
 		// We don't know which type to create here
+
+	case reflect.Map:
+		fillMap(value)
+
+	case reflect.Pointer:
+		fillPointer(value)
+
+	case reflect.Slice:
+		fillSlice(value)
+
+	case reflect.String:
+		fillString(value)
+
+	case reflect.Struct:
+		fillStruct(value)
 
 	case reflect.UnsafePointer:
 		// Unsafe pointers are just ignored
