@@ -6,6 +6,9 @@ package fuzzhelper
 
 import (
 	"encoding/binary"
+	"math"
+	"unicode/utf8"
+	"unsafe"
 )
 
 type ByteConsumer struct {
@@ -49,26 +52,119 @@ func (c *ByteConsumer) pushByte(b byte) {
 	c.pushBytes([]byte{b})
 }
 
-func (c *ByteConsumer) Uint16() uint16 {
-	dest := c.Bytes(2)
-	return binary.LittleEndian.Uint16(dest)
+func (c *ByteConsumer) Uint64(bytes uintptr) uint64 {
+	switch bytes {
+	case 8:
+		dest := c.Bytes(8)
+		return binary.LittleEndian.Uint64(dest)
+	case 4:
+		dest := c.Bytes(4)
+		return uint64(binary.LittleEndian.Uint32(dest))
+	case 2:
+		dest := c.Bytes(2)
+		return uint64(binary.LittleEndian.Uint16(dest))
+	case 1:
+		dest := c.Bytes(1)
+		return uint64(dest[0])
+	default:
+		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+	}
 }
 
-// Test only
-func (c *ByteConsumer) pushUint16(value uint16) {
-	bytes := make([]byte, 2)
-	binary.LittleEndian.PutUint16(bytes, value)
-	c.pushBytes(bytes)
+func (c *ByteConsumer) Int64(bytes uintptr) int64 {
+	switch bytes {
+	case 8:
+		dest := c.Bytes(8)
+		return int64(binary.LittleEndian.Uint64(dest))
+	case 4:
+		dest := c.Bytes(4)
+		return int64(int32((binary.LittleEndian.Uint32(dest))))
+	case 2:
+		dest := c.Bytes(2)
+		return int64(int16((binary.LittleEndian.Uint16(dest))))
+	case 1:
+		dest := c.Bytes(1)
+		return int64(int8((dest[0])))
+	default:
+		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+	}
 }
 
-func (c *ByteConsumer) Uint32() uint32 {
-	dest := c.Bytes(4)
-	return binary.LittleEndian.Uint32(dest)
+func (c *ByteConsumer) Float64(bytes uintptr) float64 {
+	floatBytes := c.Uint64(bytes)
+	return math.Float64frombits(floatBytes)
 }
 
-// Test only
-func (c *ByteConsumer) pushUint32(value uint32) {
-	bytes := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bytes, value)
-	c.pushBytes(bytes)
+// Returns a valid UTF8 string, which is at _most_ as long as length in runes
+func (c *ByteConsumer) String(length int) string {
+	bytes := c.Bytes(length)
+
+	// Extract the valid runes from the bytes
+	//
+	// The way this is implemented right now will create strings which are
+	// randomly shorter than asked for. We may want to correct this.
+	validRunes := []rune{}
+	for len(bytes) > 0 {
+		r, l := utf8.DecodeRune(bytes)
+		bytes = bytes[l:]
+		if r != utf8.RuneError {
+			validRunes = append(validRunes, r)
+		}
+	}
+
+	return string(validRunes)
+}
+
+var nativeInt = 0
+
+const (
+	NativeBytes = uintptr(unsafe.Sizeof(nativeInt))
+	BytesFor64  = 8
+	BytesFor32  = 4
+	BytesFor16  = 2
+	BytesFor8   = 1
+)
+
+// test only
+func (c *ByteConsumer) pushUint64(value uint64, bytes uintptr) {
+	switch bytes {
+	case 8:
+		bytes := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bytes, value)
+		c.pushBytes(bytes)
+	case 4:
+		bytes := make([]byte, 4)
+		binary.LittleEndian.PutUint32(bytes, uint32(value))
+		c.pushBytes(bytes)
+	case 2:
+		bytes := make([]byte, 2)
+		binary.LittleEndian.PutUint16(bytes, uint16(value))
+		c.pushBytes(bytes)
+	case 1:
+		bytes := make([]byte, 1)
+		bytes[0] = byte(value)
+		c.pushBytes(bytes)
+	default:
+		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+	}
+}
+
+func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
+	switch bytes {
+	case 8:
+		c.pushUint64(uint64(value), bytes)
+	case 4:
+		c.pushUint64(uint64(int32(value)), bytes)
+	case 2:
+		c.pushUint64(uint64(int16(value)), bytes)
+	case 1:
+		c.pushUint64(uint64(int8(value)), bytes)
+	default:
+		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+	}
+}
+
+// test only
+func (c *ByteConsumer) pushString(str string) {
+	c.pushBytes([]byte(str))
 }
