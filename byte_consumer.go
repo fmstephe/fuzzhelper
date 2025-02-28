@@ -11,6 +11,16 @@ import (
 	"unsafe"
 )
 
+var nativeInt = 0
+
+const (
+	NativeBytes = uintptr(unsafe.Sizeof(nativeInt))
+	BytesFor64  = 8
+	BytesFor32  = 4
+	BytesFor16  = 2
+	BytesFor8   = 1
+)
+
 type ByteConsumer struct {
 	bytes []byte
 }
@@ -91,8 +101,16 @@ func (c *ByteConsumer) Int64(bytes uintptr) int64 {
 }
 
 func (c *ByteConsumer) Float64(bytes uintptr) float64 {
-	floatBytes := c.Uint64(bytes)
-	return math.Float64frombits(floatBytes)
+	switch bytes {
+	case 8:
+		dest := c.Bytes(8)
+		return math.Float64frombits(binary.LittleEndian.Uint64(dest))
+	case 4:
+		dest := c.Bytes(4)
+		return float64(math.Float32frombits(binary.LittleEndian.Uint32(dest)))
+	default:
+		panic("Must provided either 8 or 4 as bytes argument")
+	}
 }
 
 // Returns a valid UTF8 string, which is at _most_ as long as length in runes
@@ -119,16 +137,6 @@ func (c *ByteConsumer) Bool() bool {
 	bytes := c.Bytes(1)
 	return bytes[0]%2 == 1
 }
-
-var nativeInt = 0
-
-const (
-	NativeBytes = uintptr(unsafe.Sizeof(nativeInt))
-	BytesFor64  = 8
-	BytesFor32  = 4
-	BytesFor16  = 2
-	BytesFor8   = 1
-)
 
 // test only
 func (c *ByteConsumer) pushUint64(value uint64, bytes uintptr) {
@@ -167,6 +175,19 @@ func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
 		c.pushUint64(uint64(int8(value)), bytes)
 	default:
 		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+	}
+}
+
+func (c *ByteConsumer) pushFloat64(value float64, bytes uintptr) {
+	switch bytes {
+	case 8:
+		floatBits := math.Float64bits(value)
+		c.pushUint64(floatBits, 8)
+	case 4:
+		floatBits := uint64(math.Float32bits(float32(value)))
+		c.pushUint64(floatBits, 4)
+	default:
+		panic("Must provided either 8 or 4 as bytes argument")
 	}
 }
 

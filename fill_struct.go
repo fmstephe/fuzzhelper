@@ -120,7 +120,8 @@ func fillFloat(value reflect.Value, c *ByteConsumer) {
 	if !canSet(value) {
 		return
 	}
-	value.SetFloat(1.234)
+	val := c.Float64(value.Type().Size())
+	value.SetFloat(val)
 }
 
 func fillComplex(value reflect.Value, c *ByteConsumer) {

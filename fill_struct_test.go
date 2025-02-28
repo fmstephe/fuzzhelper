@@ -10,7 +10,8 @@ func TestFill_Simple(t *testing.T) {
 	type testStruct struct {
 		IntValue     int
 		UintValue    uint
-		FloatValue   float64
+		Float64Value float64
+		Float32Value float32
 		ComplexValue complex64
 		Bool1Value   bool
 		Bool2Value   bool
@@ -18,21 +19,22 @@ func TestFill_Simple(t *testing.T) {
 		ArrayValue   [4]int
 		SliceValue   []uint
 		MapValue     map[string]float64
-		// Can't do simple comparison of channel - excluded from this test
+		// Can't do simple comparison of channel
 		//ChannelValue chan float64
 	}
 
 	expected := testStruct{
 		IntValue:     -1,
 		UintValue:    1,
-		FloatValue:   1.234,
+		Float64Value: 3.1415,
+		Float32Value: 4.1415,
 		ComplexValue: 1 + 2i,
 		Bool1Value:   true,
 		Bool2Value:   false,
 		StringValue:  "string",
 		ArrayValue:   [4]int{-2, -3, -4, -5},
 		SliceValue:   []uint{2, 3, 4, 5},
-		MapValue:     map[string]float64{"string": 1.234},
+		MapValue:     map[string]float64{"string": 5.1415},
 	}
 
 	// Test value
@@ -61,6 +63,10 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushInt64(-1, NativeBytes)
 	// UintValue field
 	c.pushUint64(1, NativeBytes)
+	// Float64Value field
+	c.pushFloat64(3.1415, BytesFor64)
+	// Float32Value field
+	c.pushFloat64(4.1415, BytesFor32)
 	// Bool1Value field
 	c.pushBool(true)
 	// Bool2Value field
@@ -76,6 +82,8 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushUint64(4, NativeBytes)
 	c.pushUint64(5, NativeBytes)
 
+	// MapValue map entry
+	c.pushFloat64(5.1415, NativeBytes)
 	return c
 }
 
@@ -84,9 +92,14 @@ func TestFill_Channel(t *testing.T) {
 		ChanValue chan float64
 	}
 
+	// Set all the fill values here
+	c := NewByteConsumer([]byte{})
+	// IntValue field
+	c.pushFloat64(3.1415, BytesFor64)
+
 	// Test value
 	val := testStruct{}
-	Fill(&val, nil)
+	Fill(&val, c)
 	assert.Equal(t, 1, len(val.ChanValue))
-	assert.Equal(t, 1.234, <-val.ChanValue)
+	assert.Equal(t, 3.1415, <-val.ChanValue)
 }
