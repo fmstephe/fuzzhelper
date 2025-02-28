@@ -18,8 +18,12 @@ func fill(value reflect.Value) {
 		// these.  Once we drill past this unsettable level we will
 		// fill in values recursively as we find them.
 		switch value.Kind() {
-		case reflect.Array, reflect.Slice:
-			// TODO handle arrays and slices
+		case reflect.Slice, reflect.Array:
+			println("slice/array")
+			if value.IsNil() {
+				return
+			}
+			fillSliceArray(value)
 			return
 
 		case reflect.Map:
@@ -69,7 +73,7 @@ func fill(value reflect.Value) {
 			value.SetComplex(1 + 2i)
 
 		case reflect.Array, reflect.Slice:
-			// TODO handle arrays and slices
+			fillSliceArray(value)
 			return
 
 		case reflect.Map:
@@ -120,4 +124,14 @@ func fillPointer(value reflect.Value) {
 		value.Set(newVal)
 	}
 	fill(value.Elem())
+}
+
+func fillSliceArray(value reflect.Value) {
+	if value.Kind() == reflect.Slice && value.IsNil() {
+		newSlice := reflect.MakeSlice(value.Type(), 4, 4)
+		value.Set(newSlice)
+	}
+	for i := 0; i < value.Len(); i++ {
+		fill(value.Index(i))
+	}
 }

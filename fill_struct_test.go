@@ -13,6 +13,8 @@ func TestFill_int(t *testing.T) {
 		FloatValue  float64
 		BoolValue   bool
 		StringValue string
+		ArrayValue  [4]int
+		SliceValue  []uint
 	}
 
 	expected := testStruct{
@@ -21,6 +23,8 @@ func TestFill_int(t *testing.T) {
 		FloatValue:  1.234,
 		BoolValue:   true,
 		StringValue: "string",
+		ArrayValue:  [4]int{-1, -1, -1, -1},
+		SliceValue:  []uint{1, 1, 1, 1},
 	}
 
 	// Test value
