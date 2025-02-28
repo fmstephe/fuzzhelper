@@ -47,7 +47,7 @@ func fill(value reflect.Value) {
 		fillStruct(value)
 
 	case reflect.Chan:
-		// TODO handle channels
+		fillChan(value)
 
 	case reflect.Pointer:
 		fillPointer(value)
@@ -209,4 +209,28 @@ func fillMap(value reflect.Value) {
 
 	// Set value to be the new map
 	value.Set(newMap)
+}
+
+func fillChan(value reflect.Value) {
+	print("chan")
+	if !canSet(value) && value.IsNil() {
+		return
+	}
+
+	chanType := value.Type()
+	valType := chanType.Elem()
+
+	// Create a channel
+	newChan := reflect.MakeChan(value.Type(), 1)
+
+	// Create an element for that channel
+	newValP := reflect.New(valType)
+	newVal := newValP.Elem()
+	fill(newVal)
+
+	// Put the element on the channel
+	newChan.Send(newVal)
+
+	// Set value to be the new channel
+	value.Set(newChan)
 }
