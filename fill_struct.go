@@ -11,107 +11,125 @@ func Fill(value any) {
 }
 
 func fill(value reflect.Value) {
-	if !value.CanSet() {
-		print("can't set: ")
-		// The initial value passed into this method must be an
-		// instantiated struct/map/array/slice or a pointer to one of
-		// these.  Once we drill past this unsettable level we will
-		// fill in values recursively as we find them.
-		switch value.Kind() {
-		case reflect.Slice, reflect.Array:
-			println("slice/array")
-			if value.IsNil() {
-				return
-			}
-			fillSliceArray(value)
-			return
+	// Switch on the next expected kind
+	switch value.Kind() {
+	case reflect.String:
+		fillString(value)
 
-		case reflect.Map:
-			println("map")
-			if value.IsNil() {
-				return
-			}
-			fillMap(value)
-			return
+	case reflect.Bool:
+		fillBool(value)
 
-		case reflect.Struct:
-			println("struct")
-			fillStruct(value)
-			return
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		fillInt(value)
 
-		case reflect.Pointer, reflect.Interface:
-			if value.IsNil() {
-				// If the value is unsettable and nil, there's nothing we can do
-				return
-			}
-			// Not nil, see if we can set anything after following the pointer/interface
-			println("pointer")
-			fill(value.Elem())
-		}
-	} else {
-		print("  can set: ")
-		// Switch on the next expected kind
-		switch value.Kind() {
-		case reflect.String:
-			println("string")
-			value.SetString("string")
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		fillUint(value)
 
-		case reflect.Bool:
-			println("bool")
-			value.SetBool(true)
+	case reflect.Float32, reflect.Float64:
+		fillFloat(value)
 
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			println("int")
-			value.SetInt(-1)
+	case reflect.Complex64, reflect.Complex128:
+		fillComplex(value)
 
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			println("uint")
-			value.SetUint(1)
+	case reflect.Slice:
+		fillSlice(value)
+		return
 
-		case reflect.Float32, reflect.Float64:
-			println("float")
-			value.SetFloat(1.234)
+	case reflect.Array:
+		fillArray(value)
+		return
 
-		case reflect.Complex64, reflect.Complex128:
-			println("complex")
-			value.SetComplex(1 + 2i)
+	case reflect.Map:
+		fillMap(value)
+		return
 
-		case reflect.Array, reflect.Slice:
-			println("slice/array")
-			fillSliceArray(value)
-			return
+	case reflect.Struct:
+		fillStruct(value)
 
-		case reflect.Map:
-			println("map")
-			fillMap(value)
-			return
+	case reflect.Chan:
+		// TODO handle channels
 
-		case reflect.Struct:
-			println("struct")
-			fillStruct(value)
+	case reflect.Pointer:
+		fillPointer(value)
 
-		case reflect.Chan:
-			// TODO handle channels
+	case reflect.Interface:
+		// Can't do anything here - we can't instantiate an interface type
+		// We don't know which type to create here
 
-		case reflect.Pointer:
-			// 1: Create an instance of this pointer type
-			// 2: Follow that pointer and try to fill it
-			println("pointer")
-			fillPointer(value)
+	case reflect.UnsafePointer:
+		// Unsafe pointers are just ignored
 
-		case reflect.Interface:
-			// Can't do anything here - we can't instantiate an interface type
-			// We don't know which type to create here
-
-		case reflect.UnsafePointer:
-			// Unsafe pointers are just ignored
-		default:
-			fmt.Printf("Unsupported kind %s\n", value.Kind())
-		}
+	default:
+		fmt.Printf("Unsupported kind %s\n", value.Kind())
 	}
 }
 
+func canSet(value reflect.Value) bool {
+	// The initial value passed into Fill method must be an
+	// instantiated struct/map/array/slice or a pointer to one of
+	// these.  Once we drill past this unsettable level we will
+	// fill in values recursively as we find them.
+	if value.CanSet() {
+		println(": can set")
+		return true
+	}
+
+	println(": can't set")
+	return false
+}
+
+func fillString(value reflect.Value) {
+	print("string")
+	if !canSet(value) {
+		return
+	}
+	value.SetString("string")
+}
+
+func fillBool(value reflect.Value) {
+	print("bool")
+	if !canSet(value) {
+		return
+	}
+	value.SetBool(true)
+}
+
+func fillInt(value reflect.Value) {
+	print("int")
+	if !canSet(value) {
+		return
+	}
+	value.SetInt(-1)
+}
+
+func fillUint(value reflect.Value) {
+	print("uint")
+	if !canSet(value) {
+		return
+	}
+	value.SetUint(1)
+}
+
+func fillFloat(value reflect.Value) {
+	print("float")
+	if !canSet(value) {
+		return
+	}
+	value.SetFloat(1.234)
+}
+
+func fillComplex(value reflect.Value) {
+	print("complex")
+	if !canSet(value) {
+		return
+	}
+	value.SetComplex(1 + 2i)
+}
+
 func fillStruct(value reflect.Value) {
+	print("struct")
+	canSet(value)
+
 	vType := value.Type()
 	for i := 0; i < vType.NumField(); i++ {
 		//tField := vType.Field(i)
@@ -122,6 +140,11 @@ func fillStruct(value reflect.Value) {
 }
 
 func fillPointer(value reflect.Value) {
+	print("pointer")
+	if !canSet(value) && value.IsNil() {
+		return
+	}
+
 	if value.IsNil() {
 		// If the value is nil - allocate a value for it to point to
 		pType := value.Type()
@@ -132,17 +155,37 @@ func fillPointer(value reflect.Value) {
 	fill(value.Elem())
 }
 
-func fillSliceArray(value reflect.Value) {
-	if value.Kind() == reflect.Slice && value.IsNil() {
+func fillSlice(value reflect.Value) {
+	print("slice")
+	if !canSet(value) && value.IsNil() {
+		return
+	}
+
+	if value.IsNil() {
 		newSlice := reflect.MakeSlice(value.Type(), 4, 4)
 		value.Set(newSlice)
 	}
+
+	for i := 0; i < value.Len(); i++ {
+		fill(value.Index(i))
+	}
+}
+
+func fillArray(value reflect.Value) {
+	print("array")
+	canSet(value)
+
 	for i := 0; i < value.Len(); i++ {
 		fill(value.Index(i))
 	}
 }
 
 func fillMap(value reflect.Value) {
+	print("map")
+	if !canSet(value) && value.IsNil() {
+		return
+	}
+
 	mapType := value.Type()
 	keyType := mapType.Key()
 	valType := mapType.Elem()
