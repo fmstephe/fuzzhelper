@@ -5,36 +5,36 @@ import (
 	"reflect"
 )
 
-func Fill(value any) {
-	fill(reflect.ValueOf(value))
+func Fill(value any, c *ByteConsumer) {
+	fill(reflect.ValueOf(value), c)
 	println("")
 }
 
-func fill(value reflect.Value) {
+func fill(value reflect.Value, c *ByteConsumer) {
 	switch value.Kind() {
 	case reflect.Bool:
-		fillBool(value)
+		fillBool(value, c)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		fillInt(value)
+		fillInt(value, c)
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		fillUint(value)
+		fillUint(value, c)
 
 	case reflect.Uintptr:
 		// Uintptr is ignored
 
 	case reflect.Float32, reflect.Float64:
-		fillFloat(value)
+		fillFloat(value, c)
 
 	case reflect.Complex64, reflect.Complex128:
-		fillComplex(value)
+		fillComplex(value, c)
 
 	case reflect.Array:
-		fillArray(value)
+		fillArray(value, c)
 
 	case reflect.Chan:
-		fillChan(value)
+		fillChan(value, c)
 
 	case reflect.Func:
 		// functions are ignored
@@ -44,19 +44,19 @@ func fill(value reflect.Value) {
 		// We don't know which type to create here
 
 	case reflect.Map:
-		fillMap(value)
+		fillMap(value, c)
 
 	case reflect.Pointer:
-		fillPointer(value)
+		fillPointer(value, c)
 
 	case reflect.Slice:
-		fillSlice(value)
+		fillSlice(value, c)
 
 	case reflect.String:
-		fillString(value)
+		fillString(value, c)
 
 	case reflect.Struct:
-		fillStruct(value)
+		fillStruct(value, c)
 
 	case reflect.UnsafePointer:
 		// Unsafe pointers are just ignored
@@ -80,7 +80,7 @@ func canSet(value reflect.Value) bool {
 	return false
 }
 
-func fillString(value reflect.Value) {
+func fillString(value reflect.Value, c *ByteConsumer) {
 	print("string")
 	if !canSet(value) {
 		return
@@ -88,7 +88,7 @@ func fillString(value reflect.Value) {
 	value.SetString("string")
 }
 
-func fillBool(value reflect.Value) {
+func fillBool(value reflect.Value, c *ByteConsumer) {
 	print("bool")
 	if !canSet(value) {
 		return
@@ -96,7 +96,7 @@ func fillBool(value reflect.Value) {
 	value.SetBool(true)
 }
 
-func fillInt(value reflect.Value) {
+func fillInt(value reflect.Value, c *ByteConsumer) {
 	print("int")
 	if !canSet(value) {
 		return
@@ -104,7 +104,7 @@ func fillInt(value reflect.Value) {
 	value.SetInt(-1)
 }
 
-func fillUint(value reflect.Value) {
+func fillUint(value reflect.Value, c *ByteConsumer) {
 	print("uint")
 	if !canSet(value) {
 		return
@@ -112,7 +112,7 @@ func fillUint(value reflect.Value) {
 	value.SetUint(1)
 }
 
-func fillFloat(value reflect.Value) {
+func fillFloat(value reflect.Value, c *ByteConsumer) {
 	print("float")
 	if !canSet(value) {
 		return
@@ -120,7 +120,7 @@ func fillFloat(value reflect.Value) {
 	value.SetFloat(1.234)
 }
 
-func fillComplex(value reflect.Value) {
+func fillComplex(value reflect.Value, c *ByteConsumer) {
 	print("complex")
 	if !canSet(value) {
 		return
@@ -128,7 +128,7 @@ func fillComplex(value reflect.Value) {
 	value.SetComplex(1 + 2i)
 }
 
-func fillStruct(value reflect.Value) {
+func fillStruct(value reflect.Value, c *ByteConsumer) {
 	print("struct")
 	canSet(value)
 
@@ -137,11 +137,11 @@ func fillStruct(value reflect.Value) {
 		//tField := vType.Field(i)
 		// TODO do some checking here on the field's tags
 		vField := value.Field(i)
-		fill(vField)
+		fill(vField, c)
 	}
 }
 
-func fillPointer(value reflect.Value) {
+func fillPointer(value reflect.Value, c *ByteConsumer) {
 	print("pointer")
 	if !canSet(value) && value.IsNil() {
 		return
@@ -154,10 +154,10 @@ func fillPointer(value reflect.Value) {
 		newVal := reflect.New(vType)
 		value.Set(newVal)
 	}
-	fill(value.Elem())
+	fill(value.Elem(), c)
 }
 
-func fillSlice(value reflect.Value) {
+func fillSlice(value reflect.Value, c *ByteConsumer) {
 	print("slice")
 	if !canSet(value) && value.IsNil() {
 		return
@@ -169,20 +169,20 @@ func fillSlice(value reflect.Value) {
 	}
 
 	for i := 0; i < value.Len(); i++ {
-		fill(value.Index(i))
+		fill(value.Index(i), c)
 	}
 }
 
-func fillArray(value reflect.Value) {
+func fillArray(value reflect.Value, c *ByteConsumer) {
 	print("array")
 	canSet(value)
 
 	for i := 0; i < value.Len(); i++ {
-		fill(value.Index(i))
+		fill(value.Index(i), c)
 	}
 }
 
-func fillMap(value reflect.Value) {
+func fillMap(value reflect.Value, c *ByteConsumer) {
 	print("map")
 	if !canSet(value) && value.IsNil() {
 		return
@@ -199,12 +199,12 @@ func fillMap(value reflect.Value) {
 	// Create the key
 	mapKeyP := reflect.New(keyType)
 	mapKey := mapKeyP.Elem()
-	fill(mapKey)
+	fill(mapKey, c)
 
 	// Create the value
 	mapValP := reflect.New(valType)
 	mapVal := mapValP.Elem()
-	fill(mapVal)
+	fill(mapVal, c)
 
 	// Add key/val to map
 	newMap.SetMapIndex(mapKey, mapVal)
@@ -213,7 +213,7 @@ func fillMap(value reflect.Value) {
 	value.Set(newMap)
 }
 
-func fillChan(value reflect.Value) {
+func fillChan(value reflect.Value, c *ByteConsumer) {
 	print("chan")
 	if !canSet(value) && value.IsNil() {
 		return
@@ -228,7 +228,7 @@ func fillChan(value reflect.Value) {
 	// Create an element for that channel
 	newValP := reflect.New(valType)
 	newVal := newValP.Elem()
-	fill(newVal)
+	fill(newVal, c)
 
 	// Put the element on the channel
 	newChan.Send(newVal)

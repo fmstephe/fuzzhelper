@@ -35,17 +35,17 @@ func TestFill_Simple(t *testing.T) {
 
 	// Test value
 	val := testStruct{}
-	Fill(&val)
+	Fill(&val, nil)
 	assert.Equal(t, expected, val)
 
 	// Test pointer
 	valp := &testStruct{}
-	Fill(valp)
+	Fill(valp, nil)
 	assert.Equal(t, expected, *valp)
 
 	// Test pointer to pointer
 	var valpp *testStruct
-	Fill(&valpp)
+	Fill(&valpp, nil)
 	assert.NotNil(t, valpp)
 	assert.Equal(t, expected, *valpp)
 }
@@ -57,7 +57,7 @@ func TestFill_Channel(t *testing.T) {
 
 	// Test value
 	val := testStruct{}
-	Fill(&val)
+	Fill(&val, nil)
 	assert.Equal(t, 1, len(val.ChanValue))
 	assert.Equal(t, 1.234, <-val.ChanValue)
 }
