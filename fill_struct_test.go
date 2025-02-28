@@ -6,35 +6,65 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFill_Simple(t *testing.T) {
+func TestFill_SimpleTypes(t *testing.T) {
 	type testStruct struct {
-		IntValue     int
-		UintValue    uint
+		IntValue   int
+		Int64Value int64
+		Int32Value int32
+		Int16Value int16
+		Int8Value  int8
+
+		UintValue   uint
+		Uint64Value uint64
+		Uint32Value uint32
+		Uint16Value uint16
+		Uint8Value  uint8
+
 		Float64Value float64
 		Float32Value float32
+
 		ComplexValue complex64
-		Bool1Value   bool
-		Bool2Value   bool
-		StringValue  string
-		ArrayValue   [4]int
-		SliceValue   []uint
-		MapValue     map[string]float64
+
+		Bool1Value bool
+		Bool2Value bool
+
+		StringValue string
+
+		ArrayValue [4]int
+		SliceValue []uint
+
+		MapValue map[string]float64
 		// Can't do simple comparison of channel
 		//ChannelValue chan float64
 	}
 
 	expected := testStruct{
-		IntValue:     -1,
-		UintValue:    1,
+		IntValue:   -1,
+		Int64Value: -64,
+		Int32Value: -32,
+		Int16Value: -16,
+		Int8Value:  -8,
+
+		UintValue:   1,
+		Uint64Value: 64,
+		Uint32Value: 32,
+		Uint16Value: 16,
+		Uint8Value:  8,
+
 		Float64Value: 3.1415,
 		Float32Value: 4.1415,
+
 		ComplexValue: 1 + 2i,
-		Bool1Value:   true,
-		Bool2Value:   false,
-		StringValue:  "great!",
-		ArrayValue:   [4]int{-2, -3, -4, -5},
-		SliceValue:   []uint{2, 3, 4, 5},
-		MapValue:     map[string]float64{"rocks!": 5.1415},
+
+		Bool1Value: true,
+		Bool2Value: false,
+
+		StringValue: "great!",
+
+		ArrayValue: [4]int{-2, -3, -4, -5},
+		SliceValue: []uint{2, 3, 4, 5},
+
+		MapValue: map[string]float64{"rocks!": 5.1415},
 	}
 
 	// Test value
@@ -60,10 +90,19 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	// Set all the fill values here
 	c := NewByteConsumer([]byte{})
 
-	// IntValue field
+	// IntValue fields
 	c.pushInt64(-1, BytesForNative)
+	c.pushInt64(-64, BytesFor64)
+	c.pushInt64(-32, BytesFor32)
+	c.pushInt64(-16, BytesFor16)
+	c.pushInt64(-8, BytesFor8)
+
 	// UintValue field
 	c.pushUint64(1, BytesForNative)
+	c.pushUint64(64, BytesFor64)
+	c.pushUint64(32, BytesFor32)
+	c.pushUint64(16, BytesFor16)
+	c.pushUint64(8, BytesFor8)
 
 	// Float64Value field
 	c.pushFloat64(3.1415, BytesFor64)
@@ -112,4 +151,8 @@ func TestFill_Channel(t *testing.T) {
 	Fill(&val, c)
 	assert.Equal(t, 1, len(val.ChanValue))
 	assert.Equal(t, 3.1415, <-val.ChanValue)
+}
+
+func TestFill_NestedStructs(t *testing.T) {
+	//
 }
