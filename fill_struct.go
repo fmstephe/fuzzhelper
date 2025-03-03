@@ -85,7 +85,10 @@ func fillString(value reflect.Value, c *ByteConsumer) {
 	if !canSet(value) {
 		return
 	}
-	val := c.String(6)
+	// Get the length of the string, but make it at most 24 characters
+	// TODO we need a more flexible way to managing the length of strings
+	length := int(c.Int64(BytesForNative)) % 24
+	val := c.String(length)
 	value.SetString(val)
 }
 

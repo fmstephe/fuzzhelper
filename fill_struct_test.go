@@ -28,7 +28,10 @@ func TestFill_SimpleTypes(t *testing.T) {
 		Bool1Value bool
 		Bool2Value bool
 
-		StringValue string
+		String1Value string
+		String2Value string
+		String3Value string
+		String4Value string
 
 		ArrayValue [4]int
 		SliceValue []uint
@@ -59,12 +62,15 @@ func TestFill_SimpleTypes(t *testing.T) {
 		Bool1Value: true,
 		Bool2Value: false,
 
-		StringValue: "great!",
+		String1Value: "a",
+		String2Value: "ab",
+		String3Value: "abc",
+		String4Value: "abcd",
 
 		ArrayValue: [4]int{-2, -3, -4, -5},
 		SliceValue: []uint{2, 3, 4, 5},
 
-		MapValue: map[string]float64{"rocks!": 5.1415},
+		MapValue: map[string]float64{"map key string": 5.1415},
 	}
 
 	// Test value
@@ -115,7 +121,10 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushBool(false)
 
 	// StringField field
-	c.pushString("great!")
+	c.pushString("a")
+	c.pushString("ab")
+	c.pushString("abc")
+	c.pushString("abcd")
 
 	// ArrayValue elements
 	c.pushInt64(-2, BytesForNative)
@@ -130,7 +139,7 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushUint64(5, BytesForNative)
 
 	// MapValue map key
-	c.pushString("rocks!")
+	c.pushString("map key string")
 	// MapValue map entry
 	c.pushFloat64(5.1415, BytesFor64)
 	return c

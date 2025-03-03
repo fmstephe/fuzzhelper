@@ -193,6 +193,12 @@ func (c *ByteConsumer) pushFloat64(value float64, bytes uintptr) {
 
 // test only
 func (c *ByteConsumer) pushString(str string) {
+	// TODO this exists to match a similar length limit in Fill eventually
+	// we will improve how this limit is handled and remove this hack
+	if len(str) > 24 {
+		str = str[:24]
+	}
+	c.pushInt64(int64(len(str)), BytesForNative)
 	c.pushBytes([]byte(str))
 }
 
