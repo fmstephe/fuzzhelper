@@ -324,3 +324,37 @@ func TestLinkedList_Three(t *testing.T) {
 
 	assert.Equal(t, expected, val)
 }
+
+// NB: This test clarifies that trying to build a binary tree produces a
+// lefthanded fully unbalanced tree.
+func TestUnbalancedBinaryTree(t *testing.T) {
+	type node struct {
+		Value      int
+		LeftChild  *node
+		RightChild *node
+	}
+
+	c := NewByteConsumer([]byte{})
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+
+	expected := node{
+		Value: 1,
+		LeftChild: &node{
+			Value: 2,
+			LeftChild: &node{
+				Value:      3,
+				LeftChild:  nil,
+				RightChild: nil,
+			},
+			RightChild: nil,
+		},
+		RightChild: nil,
+	}
+
+	val := node{}
+	Fill(&val, c)
+
+	assert.Equal(t, expected, val)
+}
