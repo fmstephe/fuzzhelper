@@ -162,6 +162,93 @@ func TestFill_Channel(t *testing.T) {
 	assert.Equal(t, 3.1415, <-val.ChanValue)
 }
 
-func TestFill_NestedStructs(t *testing.T) {
-	//
+// Test a series of nested structs.
+//
+// This test is very very complex, hard to write - harder to read. It's not
+// clear if it's a good test. But we do need to test this case somehow. We'll
+// have a think about this. Maybe the test will prove resilient and not need to
+// be changed in the future, in that case it will probably be left alone. But
+// if it turns out to be fragile and needs constant changes we will revisit it.
+func TestFill_Complex(t *testing.T) {
+	type innerInnerStruct struct {
+		IntValue     int
+		UintValue    uint
+		Float64Value float64
+		StringValue  string
+	}
+
+	innerInnerF := func() innerInnerStruct {
+		return innerInnerStruct{
+			IntValue:     -1,
+			UintValue:    1,
+			Float64Value: 1.234,
+			StringValue:  "string",
+		}
+	}
+
+	innerInnerBytesF := func(c *ByteConsumer) {
+		c.pushInt64(-1, BytesForNative)
+		c.pushUint64(1, BytesForNative)
+		c.pushFloat64(1.234, BytesFor64)
+		c.pushString("string")
+	}
+
+	type innerStruct struct {
+		IntValue     int
+		InnerInnerP  *innerInnerStruct
+		UintValue    uint
+		InnerInnerV  innerInnerStruct
+		Float64Value float64
+	}
+
+	innerF := func() innerStruct {
+		innerInnerP := innerInnerF()
+		return innerStruct{
+			IntValue:     -2,
+			InnerInnerP:  &innerInnerP,
+			UintValue:    2,
+			InnerInnerV:  innerInnerF(),
+			Float64Value: 2.234,
+		}
+	}
+
+	innerBytesF := func(c *ByteConsumer) {
+		c.pushInt64(-2, BytesForNative)
+		innerInnerBytesF(c)
+		c.pushUint64(2, BytesForNative)
+		innerInnerBytesF(c)
+		c.pushFloat64(2.234, BytesFor64)
+	}
+
+	type testStruct struct {
+		InnerPP  **innerStruct
+		InnerP   *innerStruct
+		InnerV   innerStruct
+		MapField map[string]innerStruct
+	}
+
+	c := NewByteConsumer([]byte{})
+	innerBytesF(c)
+	innerBytesF(c)
+	innerBytesF(c)
+	c.pushString("key")
+	innerBytesF(c)
+
+	inner := innerF()
+	innerP := &inner
+	innerPP := &innerP
+	expected := testStruct{
+		InnerPP: innerPP,
+		InnerP:  innerP,
+		InnerV:  inner,
+		MapField: map[string]innerStruct{
+			"key": innerF(),
+		},
+	}
+
+	// Test value
+	val := testStruct{}
+	Fill(&val, c)
+
+	assert.Equal(t, expected, val)
 }
