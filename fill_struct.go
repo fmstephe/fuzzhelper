@@ -11,6 +11,10 @@ func Fill(value any, c *ByteConsumer) {
 }
 
 func fill(value reflect.Value, c *ByteConsumer) {
+	if c.Len() == 0 {
+		// There are no more bytes to use to fill data
+		return
+	}
 	switch value.Kind() {
 	case reflect.Bool:
 		fillBool(value, c)

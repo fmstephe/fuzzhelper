@@ -252,3 +252,75 @@ func TestFill_Complex(t *testing.T) {
 
 	assert.Equal(t, expected, val)
 }
+
+func TestLinkedList_One(t *testing.T) {
+	type node struct {
+		Value int
+		Next  *node
+	}
+
+	c := NewByteConsumer([]byte{})
+	c.pushInt64(1, BytesForNative)
+
+	expected := node{
+		Value: 1,
+		Next:  nil,
+	}
+
+	val := node{}
+	Fill(&val, c)
+
+	assert.Equal(t, expected, val)
+}
+
+func TestLinkedList_Two(t *testing.T) {
+	type node struct {
+		Value int
+		Next  *node
+	}
+
+	c := NewByteConsumer([]byte{})
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+
+	expected := node{
+		Value: 1,
+		Next: &node{
+			Value: 2,
+			Next:  nil,
+		},
+	}
+
+	val := node{}
+	Fill(&val, c)
+
+	assert.Equal(t, expected, val)
+}
+
+func TestLinkedList_Three(t *testing.T) {
+	type node struct {
+		Value int
+		Next  *node
+	}
+
+	c := NewByteConsumer([]byte{})
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+
+	expected := node{
+		Value: 1,
+		Next: &node{
+			Value: 2,
+			Next: &node{
+				Value: 3,
+				Next:  nil,
+			},
+		},
+	}
+
+	val := node{}
+	Fill(&val, c)
+
+	assert.Equal(t, expected, val)
+}
