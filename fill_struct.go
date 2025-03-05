@@ -7,7 +7,7 @@ import (
 
 func Fill(value any, c *ByteConsumer) {
 	fill(reflect.ValueOf(value), c, newEmptyFuzzTags())
-	//println("")
+	println("")
 }
 
 func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
@@ -24,7 +24,7 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		fillInt(value, c, tags)
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		fillUint(value, c)
+		fillUint(value, c, tags)
 
 	case reflect.Uintptr:
 		// Uintptr is ignored
@@ -77,11 +77,11 @@ func canSet(value reflect.Value) bool {
 	// these.  Once we drill past this unsettable level we will
 	// fill in values recursively as we find them.
 	if value.CanSet() {
-		//println(": can set")
+		println(": can set")
 		return true
 	}
 
-	//println(": can't set")
+	println(": can't set")
 	return false
 }
 
@@ -116,13 +116,14 @@ func fillInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	value.SetInt(fittedVal)
 }
 
-func fillUint(value reflect.Value, c *ByteConsumer) {
+func fillUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	print("uint")
 	if !canSet(value) {
 		return
 	}
 	val := c.Uint64(value.Type().Size())
-	value.SetUint(val)
+	fittedVal := tags.fitUintVal(val)
+	value.SetUint(fittedVal)
 }
 
 func fillFloat(value reflect.Value, c *ByteConsumer) {
