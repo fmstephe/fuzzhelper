@@ -6,21 +6,22 @@ import (
 )
 
 func Fill(value any, c *ByteConsumer) {
-	fill(reflect.ValueOf(value), c)
-	println("")
+	fill(reflect.ValueOf(value), c, newEmptyFuzzTags())
+	//println("")
 }
 
-func fill(value reflect.Value, c *ByteConsumer) {
+func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	if c.Len() == 0 {
 		// There are no more bytes to use to fill data
 		return
 	}
+
 	switch value.Kind() {
 	case reflect.Bool:
 		fillBool(value, c)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		fillInt(value, c)
+		fillInt(value, c, tags)
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		fillUint(value, c)
@@ -76,11 +77,11 @@ func canSet(value reflect.Value) bool {
 	// these.  Once we drill past this unsettable level we will
 	// fill in values recursively as we find them.
 	if value.CanSet() {
-		println(": can set")
+		//println(": can set")
 		return true
 	}
 
-	println(": can't set")
+	//println(": can't set")
 	return false
 }
 
@@ -105,13 +106,14 @@ func fillBool(value reflect.Value, c *ByteConsumer) {
 	value.SetBool(val)
 }
 
-func fillInt(value reflect.Value, c *ByteConsumer) {
+func fillInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	print("int")
 	if !canSet(value) {
 		return
 	}
 	val := c.Int64(value.Type().Size())
-	value.SetInt(val)
+	fittedVal := tags.fitIntVal(val)
+	value.SetInt(fittedVal)
 }
 
 func fillUint(value reflect.Value, c *ByteConsumer) {
@@ -149,7 +151,9 @@ func fillStruct(value reflect.Value, c *ByteConsumer) {
 		//tField := vType.Field(i)
 		// TODO do some checking here on the field's tags
 		vField := value.Field(i)
-		fill(vField, c)
+		tField := vType.Field(i)
+		tags := newFuzzTags(tField)
+		fill(vField, c, tags)
 	}
 }
 
@@ -166,7 +170,7 @@ func fillPointer(value reflect.Value, c *ByteConsumer) {
 		newVal := reflect.New(vType)
 		value.Set(newVal)
 	}
-	fill(value.Elem(), c)
+	fill(value.Elem(), c, newEmptyFuzzTags())
 }
 
 func fillSlice(value reflect.Value, c *ByteConsumer) {
@@ -181,7 +185,7 @@ func fillSlice(value reflect.Value, c *ByteConsumer) {
 	}
 
 	for i := 0; i < value.Len(); i++ {
-		fill(value.Index(i), c)
+		fill(value.Index(i), c, newEmptyFuzzTags())
 	}
 }
 
@@ -190,7 +194,7 @@ func fillArray(value reflect.Value, c *ByteConsumer) {
 	canSet(value)
 
 	for i := 0; i < value.Len(); i++ {
-		fill(value.Index(i), c)
+		fill(value.Index(i), c, newEmptyFuzzTags())
 	}
 }
 
@@ -211,12 +215,12 @@ func fillMap(value reflect.Value, c *ByteConsumer) {
 	// Create the key
 	mapKeyP := reflect.New(keyType)
 	mapKey := mapKeyP.Elem()
-	fill(mapKey, c)
+	fill(mapKey, c, newEmptyFuzzTags())
 
 	// Create the value
 	mapValP := reflect.New(valType)
 	mapVal := mapValP.Elem()
-	fill(mapVal, c)
+	fill(mapVal, c, newEmptyFuzzTags())
 
 	// Add key/val to map
 	newMap.SetMapIndex(mapKey, mapVal)
@@ -240,7 +244,7 @@ func fillChan(value reflect.Value, c *ByteConsumer) {
 	// Create an element for that channel
 	newValP := reflect.New(valType)
 	newVal := newValP.Elem()
-	fill(newVal, c)
+	fill(newVal, c, newEmptyFuzzTags())
 
 	// Put the element on the channel
 	newChan.Send(newVal)
