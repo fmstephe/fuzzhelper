@@ -6,11 +6,18 @@ import (
 	"strconv"
 )
 
+const defaultLengthMin = 0
+const defaultLengthMax = 20
+
 type fuzzTags struct {
-	intMax  int64
-	intMin  int64
+	intMax int64
+	intMin int64
+	//
 	uintMax uint64
 	uintMin uint64
+	//
+	lengthMin uint64
+	lengthMax uint64
 }
 
 func newFuzzTags(field reflect.StructField) fuzzTags {
@@ -36,6 +43,20 @@ func newFuzzTags(field reflect.StructField) fuzzTags {
 		t.uintMin = uintMin
 	}
 
+	lengthMin, ok := getUint64Tag(field, "fuzz-length-min")
+	if ok {
+		t.lengthMin = lengthMin
+	} else {
+		t.lengthMin = defaultLengthMin
+	}
+
+	lengthMax, ok := getUint64Tag(field, "fuzz-length-max")
+	if ok {
+		t.lengthMax = lengthMax
+	} else {
+		t.lengthMax = defaultLengthMax
+	}
+
 	return t
 }
 
@@ -47,25 +68,64 @@ func newEmptyFuzzTags() fuzzTags {
 }
 
 func (t *fuzzTags) fitIntVal(val int64) int64 {
-	spread := t.intMax - t.intMin
+	return fitIntValInternal(t.intMin, t.intMax, val)
+}
+
+func (t *fuzzTags) fitUintVal(val uint64) uint64 {
+	return fitUintValInternal(t.uintMin, t.uintMax, val)
+}
+
+func (t *fuzzTags) fitLengthVal(val int) int {
+	uintLength := uint64(0)
+
+	if val < 0 {
+		uintLength = t.lengthMin
+	} else {
+		uintLength = fitUintValInternal(t.lengthMin, t.lengthMax, uint64(val))
+	}
+
+	// Double check that the value fits inside int
+	if uintLength > uint64(math.MaxInt) {
+		// If you are creating a slice or a string etc. this value will
+		// likely allocate more memory than you have. But for pure
+		// simplicity we stick to values which fit within the types
+		// used here.
+		//
+		// If you hit this then your length limits are configured wrong.
+		return math.MaxInt
+	}
+
+	return int(uintLength)
+}
+
+func fitIntValInternal(intMin, intMax, val int64) int64 {
+	if intMin == 0 && intMax == 0 {
+		return val
+	}
+
+	spread := (intMax - intMin) + 1
 	if spread <= 0 {
 		return val
 	}
 
-	fitted := (abs(val) % spread) + t.intMin
-	println("int val fitted", val, t.intMax, t.intMin, fitted)
+	fitted := (abs(val) % spread) + intMin
+	println("int val fitted", val, intMax, intMin, fitted)
 
 	return fitted
 }
 
-func (t *fuzzTags) fitUintVal(val uint64) uint64 {
-	spread := t.uintMax - t.uintMin
+func fitUintValInternal(uintMin, uintMax, val uint64) uint64 {
+	if uintMin == 0 && uintMax == 0 {
+		return val
+	}
+
+	spread := (uintMax - uintMin) + 1
 	if spread <= 0 {
 		return val
 	}
 
-	fitted := (val % spread) + t.uintMin
-	println("uint val fitted", val, t.uintMax, t.uintMin, fitted)
+	fitted := (val % spread) + uintMin
+	println("uint val fitted", val, uintMax, uintMin, fitted)
 
 	return fitted
 }
@@ -86,7 +146,7 @@ func getInt64Tag(field reflect.StructField, tag string) (int64, bool) {
 	println(field.Tag)
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
-		println("no tag found: ", tag)
+		println("no tag found: ", tag, field.Name)
 		return 0, false
 	}
 
@@ -104,7 +164,7 @@ func getUint64Tag(field reflect.StructField, tag string) (uint64, bool) {
 	println(field.Tag)
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
-		println("no tag found: ", tag)
+		println("no tag found: ", tag, field.Name)
 		return 0, false
 	}
 

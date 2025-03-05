@@ -133,6 +133,7 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushInt64(-5, BytesForNative)
 
 	// SliceValue elements
+	c.pushUint64(4, BytesForNative)
 	c.pushUint64(2, BytesForNative)
 	c.pushUint64(3, BytesForNative)
 	c.pushUint64(4, BytesForNative)

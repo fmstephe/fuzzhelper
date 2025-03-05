@@ -55,7 +55,7 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		fillPointer(value, c)
 
 	case reflect.Slice:
-		fillSlice(value, c)
+		fillSlice(value, c, tags)
 
 	case reflect.String:
 		fillString(value, c)
@@ -174,14 +174,17 @@ func fillPointer(value reflect.Value, c *ByteConsumer) {
 	fill(value.Elem(), c, newEmptyFuzzTags())
 }
 
-func fillSlice(value reflect.Value, c *ByteConsumer) {
-	print("slice")
+func fillSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+	val := int(c.Int64(BytesForNative))
+	sliceLen := tags.fitLengthVal(val)
+
+	print("slice ", sliceLen)
 	if !canSet(value) && value.IsNil() {
 		return
 	}
 
 	if value.IsNil() {
-		newSlice := reflect.MakeSlice(value.Type(), 4, 4)
+		newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
 		value.Set(newSlice)
 	}
 

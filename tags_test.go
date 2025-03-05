@@ -148,3 +148,41 @@ func assertUintLimits(t *testing.T, val uintLimitStruct) {
 	assert.LessOrEqual(t, val.Uint8Field, uint8(2))
 	assert.GreaterOrEqual(t, val.Uint8Field, uint8(1))
 }
+
+func TestFuzzTags_SliceLength(t *testing.T) {
+	type testStruct struct {
+		DefaultSlice []int
+		OneSlice     []int `fuzz-length-min:"1" fuzz-length-max:"1"`
+		FiveSlice    []int `fuzz-length-min:"0" fuzz-length-max:"5"`
+	}
+
+	c := NewByteConsumer([]byte{})
+	// Create slice of size 3
+	c.pushInt64(3, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+
+	// Create a slice of size 1, the length value consumed will be 4, but
+	// the length min/max forces the size to 1
+	c.pushInt64(4, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+
+	// Create a slice of size 4, the length value consumed will be 10, but
+	// because the max length is 5 the fitted value will be 4
+	c.pushInt64(10, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+	c.pushInt64(4, BytesForNative)
+
+	expected := testStruct{
+		DefaultSlice: []int{1, 2, 3},
+		OneSlice:     []int{1},
+		FiveSlice:    []int{1, 2, 3, 4},
+	}
+
+	val := testStruct{}
+	Fill(&val, c)
+	assert.Equal(t, expected, val)
+}
