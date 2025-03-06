@@ -152,8 +152,8 @@ func assertUintLimits(t *testing.T, val uintLimitStruct) {
 func TestFuzzTags_SliceLength(t *testing.T) {
 	type testStruct struct {
 		DefaultSlice []int
-		OneSlice     []int `fuzz-length-min:"1" fuzz-length-max:"1"`
-		FiveSlice    []int `fuzz-length-min:"0" fuzz-length-max:"5"`
+		OneSlice     []int `fuzz-slice-length-min:"1" fuzz-slice-length-max:"1"`
+		FiveSlice    []int `fuzz-slice-length-min:"0" fuzz-slice-length-max:"5"`
 	}
 
 	c := NewByteConsumer([]byte{})
@@ -180,6 +180,40 @@ func TestFuzzTags_SliceLength(t *testing.T) {
 		DefaultSlice: []int{1, 2, 3},
 		OneSlice:     []int{1},
 		FiveSlice:    []int{1, 2, 3, 4},
+	}
+
+	val := testStruct{}
+	Fill(&val, c)
+	assert.Equal(t, expected, val)
+}
+
+func TestFuzzTags_StringLength(t *testing.T) {
+	type testStruct struct {
+		DefaultString string
+		OneString     string `fuzz-string-length-min:"1" fuzz-string-length-max:"1"`
+		FiveString    string `fuzz-string-length-min:"0" fuzz-string-length-max:"5"`
+	}
+
+	c := NewByteConsumer([]byte{})
+	// Create slice of size 3
+
+	c.pushUint64(3, BytesForNative)
+	c.pushBytes([]byte("abc"))
+
+	// Create a slice of size 1, the length value consumed will be 4, but
+	// the length min/max forces the size to 1
+	c.pushUint64(4, BytesForNative)
+	c.pushBytes([]byte("a"))
+
+	// Create a slice of size 4, the length value consumed will be 10, but
+	// because the max length is 5 the fitted value will be 4
+	c.pushUint64(10, BytesForNative)
+	c.pushBytes([]byte("abcdefgh"))
+
+	expected := testStruct{
+		DefaultString: "abc",
+		OneString:     "a",
+		FiveString:    "abcd",
 	}
 
 	val := testStruct{}

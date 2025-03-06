@@ -16,8 +16,11 @@ type fuzzTags struct {
 	uintMax uint64
 	uintMin uint64
 	//
-	lengthMin uint64
-	lengthMax uint64
+	sliceLengthMin uint64
+	sliceLengthMax uint64
+	//
+	stringLengthMin uint64
+	stringLengthMax uint64
 }
 
 func newFuzzTags(field reflect.StructField) fuzzTags {
@@ -43,18 +46,32 @@ func newFuzzTags(field reflect.StructField) fuzzTags {
 		t.uintMin = uintMin
 	}
 
-	lengthMin, ok := getUint64Tag(field, "fuzz-length-min")
+	sliceLengthMin, ok := getUint64Tag(field, "fuzz-slice-length-min")
 	if ok {
-		t.lengthMin = lengthMin
+		t.sliceLengthMin = sliceLengthMin
 	} else {
-		t.lengthMin = defaultLengthMin
+		t.sliceLengthMin = defaultLengthMin
 	}
 
-	lengthMax, ok := getUint64Tag(field, "fuzz-length-max")
+	sliceLengthMax, ok := getUint64Tag(field, "fuzz-slice-length-max")
 	if ok {
-		t.lengthMax = lengthMax
+		t.sliceLengthMax = sliceLengthMax
 	} else {
-		t.lengthMax = defaultLengthMax
+		t.sliceLengthMax = defaultLengthMax
+	}
+
+	stringLengthMin, ok := getUint64Tag(field, "fuzz-string-length-min")
+	if ok {
+		t.stringLengthMin = stringLengthMin
+	} else {
+		t.stringLengthMin = defaultLengthMin
+	}
+
+	stringLengthMax, ok := getUint64Tag(field, "fuzz-string-length-max")
+	if ok {
+		t.stringLengthMax = stringLengthMax
+	} else {
+		t.stringLengthMax = defaultLengthMax
 	}
 
 	return t
@@ -75,13 +92,21 @@ func (t *fuzzTags) fitUintVal(val uint64) uint64 {
 	return fitUintValInternal(t.uintMin, t.uintMax, val)
 }
 
-func (t *fuzzTags) fitLengthVal(val int) int {
+func (t *fuzzTags) fitSliceLengthVal(val int) int {
+	return fitLengthVal(t.sliceLengthMin, t.sliceLengthMax, val)
+}
+
+func (t *fuzzTags) fitStringLength(val int) int {
+	return fitLengthVal(t.stringLengthMin, t.stringLengthMax, val)
+}
+
+func fitLengthVal(lengthMin, lengthMax uint64, val int) int {
 	uintLength := uint64(0)
 
 	if val < 0 {
-		uintLength = t.lengthMin
+		uintLength = lengthMin
 	} else {
-		uintLength = fitUintValInternal(t.lengthMin, t.lengthMax, uint64(val))
+		uintLength = fitUintValInternal(lengthMin, lengthMax, uint64(val))
 	}
 
 	// Double check that the value fits inside int

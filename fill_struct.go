@@ -58,7 +58,7 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		fillSlice(value, c, tags)
 
 	case reflect.String:
-		fillString(value, c)
+		fillString(value, c, tags)
 
 	case reflect.Struct:
 		fillStruct(value, c)
@@ -85,15 +85,16 @@ func canSet(value reflect.Value) bool {
 	return false
 }
 
-func fillString(value reflect.Value, c *ByteConsumer) {
+func fillString(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+	lengthVal := int(c.Int64(BytesForNative))
+	strLength := tags.fitStringLength(lengthVal)
+
 	print("string")
 	if !canSet(value) {
 		return
 	}
-	// Get the length of the string, but make it at most 24 characters
-	// TODO we need a more flexible way to managing the length of strings
-	length := int(c.Int64(BytesForNative)) % 24
-	val := c.String(length)
+
+	val := c.String(strLength)
 	value.SetString(val)
 }
 
@@ -176,7 +177,7 @@ func fillPointer(value reflect.Value, c *ByteConsumer) {
 
 func fillSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	val := int(c.Int64(BytesForNative))
-	sliceLen := tags.fitLengthVal(val)
+	sliceLen := tags.fitSliceLengthVal(val)
 
 	print("slice ", sliceLen)
 	if !canSet(value) && value.IsNil() {
