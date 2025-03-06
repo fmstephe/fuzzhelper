@@ -6,6 +6,7 @@ package fuzzhelper
 
 import (
 	"encoding/binary"
+	"fmt"
 	"math"
 	"unicode/utf8"
 	"unsafe"
@@ -77,7 +78,7 @@ func (c *ByteConsumer) Uint64(bytes uintptr) uint64 {
 		dest := c.Bytes(1)
 		return uint64(dest[0])
 	default:
-		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+		panic(fmt.Sprintf("Must provided either 8, 4, 2, or 1 as bytes argument. %d found.", bytes))
 	}
 }
 
@@ -96,7 +97,7 @@ func (c *ByteConsumer) Int64(bytes uintptr) int64 {
 		dest := c.Bytes(1)
 		return int64(int8((dest[0])))
 	default:
-		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+		panic(fmt.Sprintf("Must provided either 8, 4, 2, or 1 as bytes argument. %d found.", bytes))
 	}
 }
 
@@ -109,7 +110,7 @@ func (c *ByteConsumer) Float64(bytes uintptr) float64 {
 		dest := c.Bytes(4)
 		return float64(math.Float32frombits(binary.LittleEndian.Uint32(dest)))
 	default:
-		panic("Must provided either 8 or 4 as bytes argument")
+		panic(fmt.Sprintf("Must provided either 8 or 4 as bytes argument. %d found.", bytes))
 	}
 }
 
@@ -158,7 +159,7 @@ func (c *ByteConsumer) pushUint64(value uint64, bytes uintptr) {
 		bytes[0] = byte(value)
 		c.pushBytes(bytes)
 	default:
-		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+		panic(fmt.Sprintf("Must provided either 8, 4, 2, or 1 as bytes argument. %d found.", bytes))
 	}
 }
 
@@ -174,7 +175,7 @@ func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
 	case 1:
 		c.pushUint64(uint64(int8(value)), bytes)
 	default:
-		panic("Must provided either 8, 4, 2, or 1 as bytes argument")
+		panic(fmt.Sprintf("Must provided either 8, 4, 2, or 1 as bytes argument. %d found.", bytes))
 	}
 }
 
@@ -187,7 +188,7 @@ func (c *ByteConsumer) pushFloat64(value float64, bytes uintptr) {
 		floatBits := uint64(math.Float32bits(float32(value)))
 		c.pushUint64(floatBits, 4)
 	default:
-		panic("Must provided either 8 or 4 as bytes argument")
+		panic(fmt.Sprintf("Must provided either 8 or 4 as bytes argument. %d found.", bytes))
 	}
 }
 
