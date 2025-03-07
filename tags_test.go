@@ -330,3 +330,49 @@ func TestFuzzTags_MapLengthKeysAndValues(t *testing.T) {
 	Fill(&val, c)
 	assert.Equal(t, expected, val)
 }
+
+func TestFuzzTags_ChanLength(t *testing.T) {
+	type testStruct struct {
+		DefaultChan chan int
+		OneChan     chan int `fuzz-chan-range:"1,1"`
+		FiveChan    chan int `fuzz-chan-range:"0,5"`
+	}
+
+	c := NewByteConsumer([]byte{})
+
+	// Create chan of size 3
+	c.pushUint64(3, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+
+	// Create a chan of size 1, the length value consumed will be 4, but
+	// the length min/max forces the size to 1
+	c.pushUint64(4, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+
+	// Create a chan of size 4, the length value consumed will be 10, but
+	// because the max length is 5 the fitted value will be 4
+	c.pushUint64(10, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+	c.pushInt64(4, BytesForNative)
+
+	val := testStruct{}
+	Fill(&val, c)
+
+	assert.Equal(t, 3, len(val.DefaultChan))
+	assert.Equal(t, 1, <-val.DefaultChan)
+	assert.Equal(t, 2, <-val.DefaultChan)
+	assert.Equal(t, 3, <-val.DefaultChan)
+
+	assert.Equal(t, 1, len(val.OneChan))
+	assert.Equal(t, 1, <-val.OneChan)
+
+	assert.Equal(t, 4, len(val.FiveChan))
+	assert.Equal(t, 1, <-val.FiveChan)
+	assert.Equal(t, 2, <-val.FiveChan)
+	assert.Equal(t, 3, <-val.FiveChan)
+	assert.Equal(t, 4, <-val.FiveChan)
+}

@@ -39,7 +39,7 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		fillArray(value, c)
 
 	case reflect.Chan:
-		fillChan(value, c)
+		fillChan(value, c, tags)
 
 	case reflect.Func:
 		// functions are ignored
@@ -241,8 +241,11 @@ func fillMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	value.Set(newMap)
 }
 
-func fillChan(value reflect.Value, c *ByteConsumer) {
-	print("chan")
+func fillChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+	val := int(c.Int64(BytesForNative))
+	chanLen := tags.fitChanLength(val)
+
+	print("chan ", chanLen)
 	if !canSet(value) && value.IsNil() {
 		return
 	}
@@ -251,15 +254,17 @@ func fillChan(value reflect.Value, c *ByteConsumer) {
 	valType := chanType.Elem()
 
 	// Create a channel
-	newChan := reflect.MakeChan(value.Type(), 1)
+	newChan := reflect.MakeChan(value.Type(), chanLen)
 
-	// Create an element for that channel
-	newValP := reflect.New(valType)
-	newVal := newValP.Elem()
-	fill(newVal, c, newEmptyFuzzTags())
+	for range chanLen {
+		// Create an element for that channel
+		newValP := reflect.New(valType)
+		newVal := newValP.Elem()
+		fill(newVal, c, newEmptyFuzzTags())
 
-	// Put the element on the channel
-	newChan.Send(newVal)
+		// Put the element on the channel
+		newChan.Send(newVal)
+	}
 
 	// Set value to be the new channel
 	value.Set(newChan)
