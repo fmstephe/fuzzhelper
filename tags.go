@@ -4,6 +4,7 @@ import (
 	"math"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 const defaultLengthMin = 0
@@ -26,51 +27,33 @@ type fuzzTags struct {
 func newFuzzTags(field reflect.StructField) fuzzTags {
 	t := newEmptyFuzzTags()
 
-	intMax, ok := getInt64Tag(field, "fuzz-int-max")
+	intMin, intMax, ok := getInt64MinMax(field, "fuzz-int-range")
 	if ok {
+		t.intMin = intMin
 		t.intMax = intMax
 	}
 
-	intMin, ok := getInt64Tag(field, "fuzz-int-min")
+	uintMin, uintMax, ok := getUint64MinMax(field, "fuzz-uint-range")
 	if ok {
-		t.intMin = intMin
-	}
-
-	uintMax, ok := getUint64Tag(field, "fuzz-uint-max")
-	if ok {
+		t.uintMin = uintMin
 		t.uintMax = uintMax
 	}
 
-	uintMin, ok := getUint64Tag(field, "fuzz-uint-min")
-	if ok {
-		t.uintMin = uintMin
-	}
-
-	sliceLengthMin, ok := getUint64Tag(field, "fuzz-slice-length-min")
+	sliceLengthMin, sliceLengthMax, ok := getUint64MinMax(field, "fuzz-slice-range")
 	if ok {
 		t.sliceLengthMin = sliceLengthMin
-	} else {
-		t.sliceLengthMin = defaultLengthMin
-	}
-
-	sliceLengthMax, ok := getUint64Tag(field, "fuzz-slice-length-max")
-	if ok {
 		t.sliceLengthMax = sliceLengthMax
 	} else {
+		t.sliceLengthMin = defaultLengthMin
 		t.sliceLengthMax = defaultLengthMax
 	}
 
-	stringLengthMin, ok := getUint64Tag(field, "fuzz-string-length-min")
+	stringLengthMin, stringLengthMax, ok := getUint64MinMax(field, "fuzz-string-range")
 	if ok {
 		t.stringLengthMin = stringLengthMin
-	} else {
-		t.stringLengthMin = defaultLengthMin
-	}
-
-	stringLengthMax, ok := getUint64Tag(field, "fuzz-string-length-max")
-	if ok {
 		t.stringLengthMax = stringLengthMax
 	} else {
+		t.stringLengthMin = defaultLengthMin
 		t.stringLengthMax = defaultLengthMax
 	}
 
@@ -167,38 +150,63 @@ func abs(val int64) int64 {
 	return val
 }
 
-func getInt64Tag(field reflect.StructField, tag string) (int64, bool) {
+func getInt64MinMax(field reflect.StructField, tag string) (minVal, maxVal int64, found bool) {
 	println(field.Tag)
+
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
 		println("no tag found: ", tag, field.Name)
-		return 0, false
+		return 0, 0, false
 	}
 
-	val, err := strconv.ParseInt(valStr, 10, 64)
+	parts := strings.Split(valStr, ",")
+	if len(parts) != 2 {
+		println("bad min max tag", valStr)
+		return 0, 0, false
+	}
+
+	minVal, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
-		println("bad tag value", valStr)
-		return 0, false
+		println("bad min tag value", valStr)
+		return 0, 0, false
 	}
 
-	println(tag, val)
-	return val, true
+	maxVal, err = strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		println("bad max tag value", valStr)
+		return 0, 0, false
+	}
+
+	println("int64 min max", tag, minVal, maxVal)
+	return minVal, maxVal, true
 }
 
-func getUint64Tag(field reflect.StructField, tag string) (uint64, bool) {
+func getUint64MinMax(field reflect.StructField, tag string) (minVal, maxVal uint64, found bool) {
 	println(field.Tag)
+
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
 		println("no tag found: ", tag, field.Name)
-		return 0, false
+		return 0, 0, false
 	}
 
-	val, err := strconv.ParseUint(valStr, 10, 64)
+	parts := strings.Split(valStr, ",")
+	if len(parts) != 2 {
+		println("bad min max tag", valStr)
+	}
+
+	minVal, err := strconv.ParseUint(parts[0], 10, 64)
 	if err != nil {
-		println("bad tag value", valStr)
-		return 0, false
+		println("bad min tag value", valStr)
+		return 0, 0, false
 	}
 
-	println(tag, val)
-	return val, true
+	maxVal, err = strconv.ParseUint(parts[1], 10, 64)
+	if err != nil {
+		println("bad max tag value", valStr)
+		return 0, 0, false
+	}
+
+	println("uint64 min max", tag, minVal, maxVal)
+	return minVal, maxVal, true
 }

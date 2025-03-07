@@ -8,11 +8,11 @@ import (
 )
 
 type intLimitStruct struct {
-	IntField   int   `fuzz-int-min:"-10000" fuzz-int-max:"10000"`
-	Int64Field int64 `fuzz-int-min:"-1000" fuzz-int-max:"1000"`
-	Int32Field int32 `fuzz-int-min:"-100" fuzz-int-max:"100"`
-	Int16Field int16 `fuzz-int-min:"-10" fuzz-int-max:"10"`
-	Int8Field  int8  `fuzz-int-min:"-1" fuzz-int-max:"1"`
+	IntField   int   `fuzz-int-range:"-10000,10000"`
+	Int64Field int64 `fuzz-int-range:"-1000,1000"`
+	Int32Field int32 `fuzz-int-range:"-100,100"`
+	Int16Field int16 `fuzz-int-range:"-10,10"`
+	Int8Field  int8  `fuzz-int-range:"-1,1"`
 }
 
 func TestFuzzTags_IntLimits(t *testing.T) {
@@ -79,11 +79,11 @@ func assertIntLimits(t *testing.T, val intLimitStruct) {
 }
 
 type uintLimitStruct struct {
-	UintField   uint   `fuzz-uint-min:"10000" fuzz-uint-max:"20000"`
-	Uint64Field uint64 `fuzz-uint-min:"1000" fuzz-uint-max:"2000"`
-	Uint32Field uint32 `fuzz-uint-min:"100" fuzz-uint-max:"200"`
-	Uint16Field uint16 `fuzz-uint-min:"10" fuzz-uint-max:"20"`
-	Uint8Field  uint8  `fuzz-uint-min:"1" fuzz-uint-max:"2"`
+	UintField   uint   `fuzz-uint-range:"10000,20000"`
+	Uint64Field uint64 `fuzz-uint-range:"1000,2000"`
+	Uint32Field uint32 `fuzz-uint-range:"100,200"`
+	Uint16Field uint16 `fuzz-uint-range:"10,20"`
+	Uint8Field  uint8  `fuzz-uint-range:"1,2"`
 }
 
 func TestFuzzTags_UintLimits(t *testing.T) {
@@ -152,8 +152,8 @@ func assertUintLimits(t *testing.T, val uintLimitStruct) {
 func TestFuzzTags_SliceLength(t *testing.T) {
 	type testStruct struct {
 		DefaultSlice []int
-		OneSlice     []int `fuzz-slice-length-min:"1" fuzz-slice-length-max:"1"`
-		FiveSlice    []int `fuzz-slice-length-min:"0" fuzz-slice-length-max:"5"`
+		OneSlice     []int `fuzz-slice-range:"1,1"`
+		FiveSlice    []int `fuzz-slice-range:"0,5"`
 	}
 
 	c := NewByteConsumer([]byte{})
@@ -190,8 +190,8 @@ func TestFuzzTags_SliceLength(t *testing.T) {
 func TestFuzzTags_StringLength(t *testing.T) {
 	type testStruct struct {
 		DefaultString string
-		OneString     string `fuzz-string-length-min:"1" fuzz-string-length-max:"1"`
-		FiveString    string `fuzz-string-length-min:"0" fuzz-string-length-max:"5"`
+		OneString     string `fuzz-string-range:"1,1"`
+		FiveString    string `fuzz-string-range:"0,5"`
 	}
 
 	c := NewByteConsumer([]byte{})
