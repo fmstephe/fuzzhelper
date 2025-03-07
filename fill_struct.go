@@ -49,7 +49,7 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		// We don't know which type to create here
 
 	case reflect.Map:
-		fillMap(value, c)
+		fillMap(value, c, tags)
 
 	case reflect.Pointer:
 		fillPointer(value, c)
@@ -203,8 +203,11 @@ func fillArray(value reflect.Value, c *ByteConsumer) {
 	}
 }
 
-func fillMap(value reflect.Value, c *ByteConsumer) {
-	print("map")
+func fillMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+	val := int(c.Int64(BytesForNative))
+	mapLen := tags.fitMapLength(val)
+
+	print("map ", mapLen)
 	if !canSet(value) && value.IsNil() {
 		return
 	}
@@ -213,22 +216,22 @@ func fillMap(value reflect.Value, c *ByteConsumer) {
 	keyType := mapType.Key()
 	valType := mapType.Elem()
 
-	// Set only a single element in the map
-	// This is all we can do right now because we always fill the same value for every type
 	newMap := reflect.MakeMap(mapType)
 
-	// Create the key
-	mapKeyP := reflect.New(keyType)
-	mapKey := mapKeyP.Elem()
-	fill(mapKey, c, newEmptyFuzzTags())
+	for range mapLen {
+		// Create the key
+		mapKeyP := reflect.New(keyType)
+		mapKey := mapKeyP.Elem()
+		fill(mapKey, c, newEmptyFuzzTags())
 
-	// Create the value
-	mapValP := reflect.New(valType)
-	mapVal := mapValP.Elem()
-	fill(mapVal, c, newEmptyFuzzTags())
+		// Create the value
+		mapValP := reflect.New(valType)
+		mapVal := mapValP.Elem()
+		fill(mapVal, c, newEmptyFuzzTags())
 
-	// Add key/val to map
-	newMap.SetMapIndex(mapKey, mapVal)
+		// Add key/val to map
+		newMap.SetMapIndex(mapKey, mapVal)
+	}
 
 	// Set value to be the new map
 	value.Set(newMap)

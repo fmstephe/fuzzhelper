@@ -139,6 +139,8 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushUint64(4, BytesForNative)
 	c.pushUint64(5, BytesForNative)
 
+	// Map Size
+	c.pushInt64(1, BytesForNative)
 	// MapValue map key
 	c.pushString("map key string")
 	// MapValue map entry
@@ -232,6 +234,7 @@ func TestFill_Complex(t *testing.T) {
 	innerBytesF(c)
 	innerBytesF(c)
 	innerBytesF(c)
+	c.pushInt64(1, BytesForNative)
 	c.pushString("key")
 	innerBytesF(c)
 

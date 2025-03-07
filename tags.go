@@ -22,6 +22,9 @@ type fuzzTags struct {
 	//
 	stringLengthMin uint64
 	stringLengthMax uint64
+	//
+	mapLengthMin uint64
+	mapLengthMax uint64
 }
 
 func newFuzzTags(field reflect.StructField) fuzzTags {
@@ -57,6 +60,15 @@ func newFuzzTags(field reflect.StructField) fuzzTags {
 		t.stringLengthMax = defaultLengthMax
 	}
 
+	mapLengthMin, mapLengthMax, ok := getUint64MinMax(field, "fuzz-map-range")
+	if ok {
+		t.mapLengthMin = mapLengthMin
+		t.mapLengthMax = mapLengthMax
+	} else {
+		t.mapLengthMin = defaultLengthMin
+		t.mapLengthMax = defaultLengthMax
+	}
+
 	return t
 }
 
@@ -81,6 +93,10 @@ func (t *fuzzTags) fitSliceLengthVal(val int) int {
 
 func (t *fuzzTags) fitStringLength(val int) int {
 	return fitLengthVal(t.stringLengthMin, t.stringLengthMax, val)
+}
+
+func (t *fuzzTags) fitMapLength(val int) int {
+	return fitLengthVal(t.mapLengthMin, t.mapLengthMax, val)
 }
 
 func fitLengthVal(lengthMin, lengthMax uint64, val int) int {
