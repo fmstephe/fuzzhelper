@@ -133,7 +133,7 @@ func fitIntValInternal(intMin, intMax, val int64) int64 {
 	}
 
 	fitted := (abs(val) % spread) + intMin
-	println("int val fitted", val, intMax, intMin, fitted)
+	println("int val fitted", val, intMin, intMax, fitted)
 
 	return fitted
 }
@@ -149,7 +149,7 @@ func fitUintValInternal(uintMin, uintMax, val uint64) uint64 {
 	}
 
 	fitted := (val % spread) + uintMin
-	println("uint val fitted", val, uintMax, uintMin, fitted)
+	println("uint val fitted", val, uintMin, uintMax, fitted)
 
 	return fitted
 }

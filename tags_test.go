@@ -278,3 +278,55 @@ func TestFuzzTags_MapLength(t *testing.T) {
 	Fill(&val, c)
 	assert.Equal(t, expected, val)
 }
+
+func TestFuzzTags_MapLengthKeysAndValues(t *testing.T) {
+	type testStruct struct {
+		DefaultMap map[string][]int `fuzz-map-range:"0,5" fuzz-string-range:"0,4" fuzz-slice-range:"0,5"`
+	}
+
+	c := NewByteConsumer([]byte{})
+
+	// Create map of size 3
+	c.pushUint64(3, BytesForNative)
+
+	// First Key/Value
+	// String Key of length 3
+	c.pushInt64(3, BytesForNative)
+	c.pushBytes([]byte("abc"))
+	// Slice Value of length 1
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+
+	// Second Key/Value
+	// String Key of length 4
+	c.pushInt64(4, BytesForNative)
+	c.pushBytes([]byte("abcd"))
+	// Slice Value of length 2
+	c.pushInt64(8, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+
+	// Third Key/Value
+	// String Key of length 2
+	c.pushInt64(7, BytesForNative)
+	c.pushBytes([]byte("ab"))
+	// Slice Value of length 5
+	c.pushInt64(11, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+	c.pushInt64(4, BytesForNative)
+	c.pushInt64(5, BytesForNative)
+
+	expected := testStruct{
+		DefaultMap: map[string][]int{
+			"abc":  []int{1},
+			"abcd": []int{1, 2},
+			"ab":   []int{1, 2, 3, 4, 5},
+		},
+	}
+
+	val := testStruct{}
+	Fill(&val, c)
+	assert.Equal(t, expected, val)
+}

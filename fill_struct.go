@@ -89,7 +89,7 @@ func fillString(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	lengthVal := int(c.Int64(BytesForNative))
 	strLength := tags.fitStringLength(lengthVal)
 
-	print("string")
+	print("string ", strLength)
 	if !canSet(value) {
 		return
 	}
@@ -222,12 +222,16 @@ func fillMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		// Create the key
 		mapKeyP := reflect.New(keyType)
 		mapKey := mapKeyP.Elem()
-		fill(mapKey, c, newEmptyFuzzTags())
+		// Note here that the tags used to create this map are also
+		// used to create the key
+		fill(mapKey, c, tags)
 
 		// Create the value
 		mapValP := reflect.New(valType)
 		mapVal := mapValP.Elem()
-		fill(mapVal, c, newEmptyFuzzTags())
+		// Note here that the tags used to create this map are also
+		// used to create the value
+		fill(mapVal, c, tags)
 
 		// Add key/val to map
 		newMap.SetMapIndex(mapKey, mapVal)
