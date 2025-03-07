@@ -155,6 +155,8 @@ func TestFill_Channel(t *testing.T) {
 
 	// Set all the fill values here
 	c := NewByteConsumer([]byte{})
+	// Channel is size 1
+	c.pushUint64(1, BytesForNative)
 	// IntValue field
 	c.pushFloat64(3.1415, BytesFor64)
 

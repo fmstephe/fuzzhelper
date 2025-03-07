@@ -376,3 +376,58 @@ func TestFuzzTags_ChanLength(t *testing.T) {
 	assert.Equal(t, 3, <-val.FiveChan)
 	assert.Equal(t, 4, <-val.FiveChan)
 }
+
+func TestFuzzTags_ChanLengthKeysAndValues(t *testing.T) {
+	type testStruct struct {
+		StringChan chan string `fuzz-chan-range:"0,5" fuzz-string-range:"0,4"`
+		SliceChan  chan []int  `fuzz-chan-range:"0,5" fuzz-slice-range:"0,5"`
+	}
+
+	c := NewByteConsumer([]byte{})
+
+	// StringChan chan of size 3
+	c.pushUint64(3, BytesForNative)
+
+	// String of length 3
+	c.pushInt64(3, BytesForNative)
+	c.pushBytes([]byte("abc"))
+	// String of length 2
+	c.pushInt64(7, BytesForNative)
+	c.pushBytes([]byte("ab"))
+	// String of length 4
+	c.pushInt64(9, BytesForNative)
+	c.pushBytes([]byte("abcd"))
+
+	// SliceChan chan of size 3
+	c.pushUint64(3, BytesForNative)
+
+	// Slice Value of length 2
+	c.pushInt64(8, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+
+	// Slice Value of length 5
+	c.pushInt64(11, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+	c.pushInt64(4, BytesForNative)
+	c.pushInt64(5, BytesForNative)
+
+	// Slice Value of length 1
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(1, BytesForNative)
+
+	val := testStruct{}
+	Fill(&val, c)
+
+	assert.Equal(t, 3, len(val.StringChan))
+	assert.Equal(t, "abc", <-val.StringChan)
+	assert.Equal(t, "ab", <-val.StringChan)
+	assert.Equal(t, "abcd", <-val.StringChan)
+
+	assert.Equal(t, 3, len(val.SliceChan))
+	assert.Equal(t, []int{1, 2}, <-val.SliceChan)
+	assert.Equal(t, []int{1, 2, 3, 4, 5}, <-val.SliceChan)
+	assert.Equal(t, []int{1}, <-val.SliceChan)
+}

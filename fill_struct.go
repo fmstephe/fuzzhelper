@@ -260,7 +260,9 @@ func fillChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		// Create an element for that channel
 		newValP := reflect.New(valType)
 		newVal := newValP.Elem()
-		fill(newVal, c, newEmptyFuzzTags())
+		// Note here that the tags used to create this chan are also
+		// used to create the values added to the channel
+		fill(newVal, c, tags)
 
 		// Put the element on the channel
 		newChan.Send(newVal)
