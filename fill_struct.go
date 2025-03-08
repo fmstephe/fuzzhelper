@@ -86,6 +86,20 @@ func canSet(value reflect.Value) bool {
 }
 
 func fillString(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+	// First check if there is a list of valid string values
+	if len(tags.stringValues) != 0 {
+		val := c.Uint64(BytesForNative)
+		str := tags.stringValues[val%uint64(len(tags.stringValues))]
+
+		print("string ", len(str))
+		if !canSet(value) {
+			return
+		}
+
+		value.SetString(str)
+		return
+	}
+
 	lengthVal := int(c.Int64(BytesForNative))
 	strLength := tags.fitStringLength(lengthVal)
 

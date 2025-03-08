@@ -28,6 +28,8 @@ type fuzzTags struct {
 	//
 	chanLengthMin uint64
 	chanLengthMax uint64
+	//
+	stringValues []string
 }
 
 func newFuzzTags(field reflect.StructField) fuzzTags {
@@ -79,6 +81,11 @@ func newFuzzTags(field reflect.StructField) fuzzTags {
 	} else {
 		t.chanLengthMin = defaultLengthMin
 		t.chanLengthMax = defaultLengthMax
+	}
+
+	stringValues, ok := getStringValues(field, "fuzz-string-values")
+	if ok {
+		t.stringValues = stringValues
 	}
 
 	return t
@@ -241,4 +248,17 @@ func getUint64MinMax(field reflect.StructField, tag string) (minVal, maxVal uint
 
 	println("uint64 min max", tag, minVal, maxVal)
 	return minVal, maxVal, true
+}
+
+func getStringValues(field reflect.StructField, tag string) (values []string, found bool) {
+	println(field.Tag)
+
+	valStr, ok := field.Tag.Lookup(tag)
+	if !ok {
+		println("no tag found: ", tag, field.Name)
+		return []string{}, false
+	}
+
+	values = strings.Split(valStr, ",")
+	return values, true
 }
