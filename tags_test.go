@@ -431,3 +431,32 @@ func TestFuzzTags_ChanLengthKeysAndValues(t *testing.T) {
 	assert.Equal(t, []int{1, 2, 3, 4, 5}, <-val.SliceChan)
 	assert.Equal(t, []int{1}, <-val.SliceChan)
 }
+
+func TestFuzzTags_StringValues(t *testing.T) {
+	type testStruct struct {
+		StringField0 string `fuzz-string-values:"zero,one,two,three,four,five"`
+		StringField1 string `fuzz-string-values:"zero,one,two,three,four,five"`
+		StringField2 string `fuzz-string-values:"zero,one,two,three,four,five"`
+		StringField3 string `fuzz-string-values:"zero,one,two,three,four,five"`
+		StringField4 string `fuzz-string-values:"zero,one,two,three,four,five"`
+		StringField5 string `fuzz-string-values:"zero,one,two,three,four,five"`
+	}
+
+	c := NewByteConsumer([]byte{})
+	c.pushUint64(0, BytesForNative)
+	c.pushUint64(1, BytesForNative)
+	c.pushUint64(2, BytesForNative)
+	c.pushUint64(3, BytesForNative)
+	c.pushUint64(4, BytesForNative)
+	c.pushUint64(5, BytesForNative)
+
+	val := testStruct{}
+	Fill(&val, c)
+
+	assert.Equal(t, "zero", val.StringField0)
+	assert.Equal(t, "one", val.StringField1)
+	assert.Equal(t, "two", val.StringField2)
+	assert.Equal(t, "three", val.StringField3)
+	assert.Equal(t, "four", val.StringField4)
+	assert.Equal(t, "five", val.StringField5)
+}
