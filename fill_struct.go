@@ -164,11 +164,9 @@ func fillStruct(value reflect.Value, c *ByteConsumer) {
 
 	vType := value.Type()
 	for i := 0; i < vType.NumField(); i++ {
-		//tField := vType.Field(i)
-		// TODO do some checking here on the field's tags
 		vField := value.Field(i)
 		tField := vType.Field(i)
-		tags := newFuzzTags(tField)
+		tags := newFuzzTags(value, tField)
 		fill(vField, c, tags)
 	}
 }
