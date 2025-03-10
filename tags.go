@@ -1,6 +1,7 @@
 package fuzzhelper
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"strconv"
@@ -32,7 +33,7 @@ type fuzzTags struct {
 	stringValues []string
 }
 
-func newFuzzTags(field reflect.StructField) fuzzTags {
+func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	t := newEmptyFuzzTags()
 
 	intMin, intMax, ok := getInt64MinMax(field, "fuzz-int-range")
@@ -83,7 +84,7 @@ func newFuzzTags(field reflect.StructField) fuzzTags {
 		t.chanLengthMax = defaultLengthMax
 	}
 
-	stringValues, ok := getStringValues(field, "fuzz-string-values")
+	stringValues, ok := getStringValues(structVal, field, "fuzz-string-method")
 	if ok {
 		t.stringValues = stringValues
 	}
@@ -250,15 +251,38 @@ func getUint64MinMax(field reflect.StructField, tag string) (minVal, maxVal uint
 	return minVal, maxVal, true
 }
 
-func getStringValues(field reflect.StructField, tag string) (values []string, found bool) {
+func getStringValues(structVal reflect.Value, field reflect.StructField, tag string) (values []string, found bool) {
 	println(field.Tag)
 
-	valStr, ok := field.Tag.Lookup(tag)
+	methodName, ok := field.Tag.Lookup(tag)
 	if !ok {
 		println("no tag found: ", tag, field.Name)
 		return []string{}, false
 	}
 
-	values = strings.Split(valStr, ",")
-	return values, true
+	method := structVal.MethodByName(methodName)
+	if !method.IsValid() {
+		println("no method found: ", methodName, field.Name, structVal.Type().String())
+		return []string{}, false
+	}
+
+	methodType := method.Type()
+	if methodType.NumIn() != 0 {
+		println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
+		return []string{}, false
+	}
+
+	if methodType.NumOut() != 1 {
+		println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
+		return []string{}, false
+	}
+
+	returnType := methodType.Out(0)
+	if returnType != reflect.TypeFor[[]string]() {
+		println(fmt.Sprintf("expected method returning []string, method returns %s", returnType), methodName, field.Name)
+	}
+
+	result := method.Call([]reflect.Value{})
+
+	return result[0].Interface().([]string), true
 }

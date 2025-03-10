@@ -432,16 +432,27 @@ func TestFuzzTags_ChanLengthKeysAndValues(t *testing.T) {
 	assert.Equal(t, []int{1}, <-val.SliceChan)
 }
 
-func TestFuzzTags_StringValues(t *testing.T) {
-	type testStruct struct {
-		StringField0 string `fuzz-string-values:"zero,one,two,three,four,five"`
-		StringField1 string `fuzz-string-values:"zero,one,two,three,four,five"`
-		StringField2 string `fuzz-string-values:"zero,one,two,three,four,five"`
-		StringField3 string `fuzz-string-values:"zero,one,two,three,four,five"`
-		StringField4 string `fuzz-string-values:"zero,one,two,three,four,five"`
-		StringField5 string `fuzz-string-values:"zero,one,two,three,four,five"`
-	}
+type stringMethodStruct struct {
+	StringField0 string `fuzz-string-method:"StringOptions"`
+	StringField1 string `fuzz-string-method:"StringOptions"`
+	StringField2 string `fuzz-string-method:"StringOptions"`
+	StringField3 string `fuzz-string-method:"StringOptions"`
+	StringField4 string `fuzz-string-method:"StringOptions"`
+	StringField5 string `fuzz-string-method:"StringOptions"`
+}
 
+func (s stringMethodStruct) StringOptions() []string {
+	return []string{
+		"zero",
+		"one",
+		"two",
+		"three",
+		"four",
+		"five",
+	}
+}
+
+func TestFuzzTags_StringValues(t *testing.T) {
 	c := NewByteConsumer([]byte{})
 	c.pushUint64(0, BytesForNative)
 	c.pushUint64(1, BytesForNative)
@@ -450,7 +461,7 @@ func TestFuzzTags_StringValues(t *testing.T) {
 	c.pushUint64(4, BytesForNative)
 	c.pushUint64(5, BytesForNative)
 
-	val := testStruct{}
+	val := stringMethodStruct{}
 	Fill(&val, c)
 
 	assert.Equal(t, "zero", val.StringField0)
