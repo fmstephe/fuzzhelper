@@ -123,6 +123,19 @@ func fillBool(value reflect.Value, c *ByteConsumer) {
 
 func fillInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	print("int")
+
+	// First check there is a list of valid int values
+	if len(tags.intValues) != 0 {
+		val := c.Uint64(BytesForNative)
+		intVal := tags.intValues[val%uint64(len(tags.intValues))]
+		if !canSet(value) {
+			return
+		}
+
+		value.SetInt(intVal)
+		return
+	}
+
 	if !canSet(value) {
 		return
 	}
@@ -133,6 +146,19 @@ func fillInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 
 func fillUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	print("uint")
+
+	// First check there is a list of valid uint values
+	if len(tags.uintValues) != 0 {
+		val := c.Uint64(BytesForNative)
+		uintVal := tags.uintValues[val%uint64(len(tags.uintValues))]
+		if !canSet(value) {
+			return
+		}
+
+		value.SetUint(uintVal)
+		return
+	}
+
 	if !canSet(value) {
 		return
 	}

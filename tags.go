@@ -30,6 +30,10 @@ type fuzzTags struct {
 	chanLengthMin uint64
 	chanLengthMax uint64
 	//
+	intValues []int64
+	//
+	uintValues []uint64
+	//
 	stringValues []string
 }
 
@@ -84,7 +88,17 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 		t.chanLengthMax = defaultLengthMax
 	}
 
-	stringValues, ok := getStringValues(structVal, field, "fuzz-string-method")
+	intValues, ok := callMethodFromTag[[]int64](structVal, field, "fuzz-int-method")
+	if ok {
+		t.intValues = intValues
+	}
+
+	uintValues, ok := callMethodFromTag[[]uint64](structVal, field, "fuzz-uint-method")
+	if ok {
+		t.uintValues = uintValues
+	}
+
+	stringValues, ok := callMethodFromTag[[]string](structVal, field, "fuzz-string-method")
 	if ok {
 		t.stringValues = stringValues
 	}
@@ -251,38 +265,37 @@ func getUint64MinMax(field reflect.StructField, tag string) (minVal, maxVal uint
 	return minVal, maxVal, true
 }
 
-func getStringValues(structVal reflect.Value, field reflect.StructField, tag string) (values []string, found bool) {
-	println(field.Tag)
+func callMethodFromTag[T any](structVal reflect.Value, field reflect.StructField, tag string) (val T, found bool) {
 
 	methodName, ok := field.Tag.Lookup(tag)
 	if !ok {
 		println("no tag found: ", tag, field.Name)
-		return []string{}, false
+		return val, false
 	}
 
 	method := structVal.MethodByName(methodName)
 	if !method.IsValid() {
 		println("no method found: ", methodName, field.Name, structVal.Type().String())
-		return []string{}, false
+		return val, false
 	}
 
 	methodType := method.Type()
 	if methodType.NumIn() != 0 {
 		println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
-		return []string{}, false
+		return val, false
 	}
 
 	if methodType.NumOut() != 1 {
 		println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
-		return []string{}, false
+		return val, false
 	}
 
 	returnType := methodType.Out(0)
-	if returnType != reflect.TypeFor[[]string]() {
-		println(fmt.Sprintf("expected method returning []string, method returns %s", returnType), methodName, field.Name)
+	if returnType != reflect.TypeFor[T]() {
+		println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
 	}
 
 	result := method.Call([]reflect.Value{})
 
-	return result[0].Interface().([]string), true
+	return result[0].Interface().(T), true
 }
