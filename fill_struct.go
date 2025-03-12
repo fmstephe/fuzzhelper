@@ -33,7 +33,9 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		fillFloat(value, c, tags)
 
 	case reflect.Complex64, reflect.Complex128:
-		fillComplex(value, c)
+		// Complex are ignored
+		// Only because I don't use them, and I don't think many people use them
+		// If needed support should be easy to add
 
 	case reflect.Array:
 		fillArray(value, c)
@@ -189,14 +191,6 @@ func fillFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	val := c.Float64(value.Type().Size())
 	fittedVal := tags.fitFloatVal(val)
 	value.SetFloat(fittedVal)
-}
-
-func fillComplex(value reflect.Value, c *ByteConsumer) {
-	print("complex")
-	if !canSet(value) {
-		return
-	}
-	value.SetComplex(1 + 2i)
 }
 
 func fillStruct(value reflect.Value, c *ByteConsumer) {
