@@ -2,6 +2,7 @@ package fuzzhelper
 
 import (
 	"math"
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -147,6 +148,109 @@ func assertUintLimits(t *testing.T, val uintLimitStruct) {
 
 	assert.LessOrEqual(t, val.Uint8Field, uint8(2))
 	assert.GreaterOrEqual(t, val.Uint8Field, uint8(1))
+}
+
+type floatLimitStruct struct {
+	Float64FieldBigLimit  float64 `fuzz-float-range:"1000,2000"`
+	Float64FieldTinyLimit float64 `fuzz-float-range:"0.1,0.2"`
+	//
+	Float32FieldBigLimit  float32 `fuzz-float-range:"100,200"`
+	Float32FieldTinyLimit float32 `fuzz-float-range:"0.01,0.02"`
+}
+
+func TestFuzzTags_Float_Rand(t *testing.T) {
+	// Generate some random floats
+	for i := 0; i <= 40_000; i++ {
+		c := NewByteConsumer([]byte{})
+		c.pushFloat64(float64(rand.Float64()), BytesFor64)
+		c.pushFloat64(float64(rand.Float64()), BytesFor64)
+		c.pushFloat64(float64(rand.Float32()), BytesFor32)
+		c.pushFloat64(float64(rand.Float32()), BytesFor32)
+
+		val := floatLimitStruct{}
+		Fill(&val, c)
+
+		assertFloatLimits(t, val)
+	}
+}
+
+func TestFuzzTags_Float_Max(t *testing.T) {
+	c := NewByteConsumer([]byte{})
+	c.pushFloat64(math.MaxFloat64, BytesFor64)
+	c.pushFloat64(math.MaxFloat64, BytesFor64)
+	c.pushFloat64(math.MaxFloat32, BytesFor32)
+	c.pushFloat64(math.MaxFloat32, BytesFor32)
+
+	val := floatLimitStruct{}
+	Fill(&val, c)
+
+	assertFloatLimits(t, val)
+}
+
+func TestFuzzTags_Float_Min(t *testing.T) {
+	c := NewByteConsumer([]byte{})
+	c.pushFloat64(-math.MaxFloat64, BytesFor64)
+	c.pushFloat64(-math.MaxFloat64, BytesFor64)
+	c.pushFloat64(-math.MaxFloat32, BytesFor32)
+	c.pushFloat64(-math.MaxFloat32, BytesFor32)
+
+	val := floatLimitStruct{}
+	Fill(&val, c)
+
+	assertFloatLimits(t, val)
+}
+
+func TestFuzzTags_Float_Zero(t *testing.T) {
+	c := NewByteConsumer([]byte{})
+	c.pushFloat64(0, BytesFor64)
+	c.pushFloat64(0, BytesFor64)
+	c.pushFloat64(0, BytesFor32)
+	c.pushFloat64(0, BytesFor32)
+
+	val := floatLimitStruct{}
+	Fill(&val, c)
+
+	assertFloatLimits(t, val)
+}
+
+func TestFuzzTags_Float_NaN(t *testing.T) {
+	c := NewByteConsumer([]byte{})
+	c.pushFloat64(math.NaN(), BytesFor64)
+	c.pushFloat64(math.NaN(), BytesFor64)
+	c.pushFloat64(math.NaN(), BytesFor32)
+	c.pushFloat64(math.NaN(), BytesFor32)
+
+	val := floatLimitStruct{}
+	Fill(&val, c)
+
+	assertFloatLimits(t, val)
+}
+
+func TestFuzzTags_Float_Inf(t *testing.T) {
+	c := NewByteConsumer([]byte{})
+	c.pushFloat64(math.Inf(1), BytesFor64)
+	c.pushFloat64(math.Inf(-1), BytesFor64)
+	c.pushFloat64(math.Inf(1), BytesFor32)
+	c.pushFloat64(math.Inf(-1), BytesFor32)
+
+	val := floatLimitStruct{}
+	Fill(&val, c)
+
+	assertFloatLimits(t, val)
+}
+
+func assertFloatLimits(t *testing.T, val floatLimitStruct) {
+	assert.LessOrEqual(t, val.Float64FieldBigLimit, float64(2000))
+	assert.GreaterOrEqual(t, val.Float64FieldBigLimit, float64(1000))
+	//
+	assert.LessOrEqual(t, val.Float64FieldTinyLimit, float64(0.2))
+	assert.GreaterOrEqual(t, val.Float64FieldTinyLimit, float64(0.1))
+	//
+	assert.LessOrEqual(t, val.Float32FieldBigLimit, float32(200))
+	assert.GreaterOrEqual(t, val.Float32FieldBigLimit, float32(100))
+	//
+	assert.LessOrEqual(t, val.Float32FieldTinyLimit, float32(0.02))
+	assert.GreaterOrEqual(t, val.Float32FieldTinyLimit, float32(0.01))
 }
 
 func TestFuzzTags_SliceLength(t *testing.T) {
