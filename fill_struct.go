@@ -169,6 +169,19 @@ func fillUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 
 func fillFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	print("float")
+
+	// First check there is a list of valid uint values
+	if len(tags.floatValues) != 0 {
+		val := c.Uint64(BytesForNative)
+		floatVal := tags.floatValues[val%uint64(len(tags.floatValues))]
+		if !canSet(value) {
+			return
+		}
+
+		value.SetFloat(floatVal)
+		return
+	}
+
 	if !canSet(value) {
 		return
 	}
