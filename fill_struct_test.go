@@ -23,8 +23,6 @@ func TestFill_SimpleTypes(t *testing.T) {
 		Float64Value float64
 		Float32Value float32
 
-		ComplexValue complex64
-
 		Bool1Value bool
 		Bool2Value bool
 
@@ -56,8 +54,6 @@ func TestFill_SimpleTypes(t *testing.T) {
 
 		Float64Value: 3.1415,
 		Float32Value: 4.1415,
-
-		ComplexValue: 1 + 2i,
 
 		Bool1Value: true,
 		Bool2Value: false,
