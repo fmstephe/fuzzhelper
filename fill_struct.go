@@ -30,7 +30,7 @@ func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 		// Uintptr is ignored
 
 	case reflect.Float32, reflect.Float64:
-		fillFloat(value, c)
+		fillFloat(value, c, tags)
 
 	case reflect.Complex64, reflect.Complex128:
 		fillComplex(value, c)
@@ -167,13 +167,15 @@ func fillUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	value.SetUint(fittedVal)
 }
 
-func fillFloat(value reflect.Value, c *ByteConsumer) {
+func fillFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	print("float")
 	if !canSet(value) {
 		return
 	}
+
 	val := c.Float64(value.Type().Size())
-	value.SetFloat(val)
+	fittedVal := tags.fitFloatVal(val)
+	value.SetFloat(fittedVal)
 }
 
 func fillComplex(value reflect.Value, c *ByteConsumer) {
