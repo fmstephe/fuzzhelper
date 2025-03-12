@@ -557,6 +557,13 @@ type methodStruct struct {
 	UintField3 uint64 `fuzz-uint-method:"UintOptions"`
 	UintField4 uint64 `fuzz-uint-method:"UintOptions"`
 	UintField5 uint64 `fuzz-uint-method:"UintOptions"`
+	//
+	FloatField0 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField1 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField2 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField3 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField4 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField5 float64 `fuzz-float-method:"FloatOptions"`
 }
 
 func (s methodStruct) StringOptions() []string {
@@ -592,6 +599,17 @@ func (s methodStruct) UintOptions() []uint64 {
 	}
 }
 
+func (s methodStruct) FloatOptions() []float64 {
+	return []float64{
+		0.0,
+		0.1,
+		0.2,
+		0.3,
+		0.4,
+		0.5,
+	}
+}
+
 func TestFuzzTags_MethodValues(t *testing.T) {
 	c := NewByteConsumer([]byte{})
 	// Values for strings
@@ -609,6 +627,13 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	c.pushUint64(4, BytesForNative)
 	c.pushUint64(5, BytesForNative)
 	// Values for uints
+	c.pushUint64(0, BytesForNative)
+	c.pushUint64(1, BytesForNative)
+	c.pushUint64(2, BytesForNative)
+	c.pushUint64(3, BytesForNative)
+	c.pushUint64(4, BytesForNative)
+	c.pushUint64(5, BytesForNative)
+	// Values for floats
 	c.pushUint64(0, BytesForNative)
 	c.pushUint64(1, BytesForNative)
 	c.pushUint64(2, BytesForNative)
@@ -639,4 +664,11 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	assert.Equal(t, uint64(30), val.UintField3)
 	assert.Equal(t, uint64(40), val.UintField4)
 	assert.Equal(t, uint64(50), val.UintField5)
+
+	assert.Equal(t, float64(0.0), val.FloatField0)
+	assert.Equal(t, float64(0.1), val.FloatField1)
+	assert.Equal(t, float64(0.2), val.FloatField2)
+	assert.Equal(t, float64(0.3), val.FloatField3)
+	assert.Equal(t, float64(0.4), val.FloatField4)
+	assert.Equal(t, float64(0.5), val.FloatField5)
 }

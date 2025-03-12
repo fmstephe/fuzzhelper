@@ -38,6 +38,8 @@ type fuzzTags struct {
 	//
 	uintValues []uint64
 	//
+	floatValues []float64
+	//
 	stringValues []string
 }
 
@@ -106,6 +108,11 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	uintValues, ok := callMethodFromTag[[]uint64](structVal, field, "fuzz-uint-method")
 	if ok {
 		t.uintValues = uintValues
+	}
+
+	floatValues, ok := callMethodFromTag[[]float64](structVal, field, "fuzz-float-method")
+	if ok {
+		t.floatValues = floatValues
 	}
 
 	stringValues, ok := callMethodFromTag[[]string](structVal, field, "fuzz-string-method")
