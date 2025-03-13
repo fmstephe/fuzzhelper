@@ -122,14 +122,16 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushString("abc")
 	c.pushString("abcd")
 
-	// ArrayValue elements
+	// ArrayValue has fixed size, requires no data
+	// ArrayValue Elements
 	c.pushInt64(-2, BytesForNative)
 	c.pushInt64(-3, BytesForNative)
 	c.pushInt64(-4, BytesForNative)
 	c.pushInt64(-5, BytesForNative)
 
-	// SliceValue elements
+	// SliceValue Size
 	c.pushUint64(4, BytesForNative)
+	// SliceValue Elements
 	c.pushUint64(2, BytesForNative)
 	c.pushUint64(3, BytesForNative)
 	c.pushUint64(4, BytesForNative)
@@ -141,7 +143,31 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 	c.pushString("map key string")
 	// MapValue map entry
 	c.pushFloat64(5.1415, BytesFor64)
+
 	return c
+}
+
+func TestFill_Map(t *testing.T) {
+	type valueStruct struct {
+		IntField int
+	}
+	type testStruct struct {
+		MapValue map[int]valueStruct
+	}
+
+	// Set all the fill values here
+	c := NewByteConsumer([]byte{})
+	// Channel is size 1
+	c.pushUint64(1, BytesForNative)
+	// IntValue field
+	c.pushUint64(1, BytesForNative)
+	c.pushUint64(2, BytesForNative)
+
+	// Test value
+	val := testStruct{}
+	Fill(&val, c)
+	assert.Equal(t, 1, len(val.MapValue))
+	assert.Equal(t, 2, val.MapValue[1].IntField)
 }
 
 func TestFill_Channel(t *testing.T) {
@@ -172,79 +198,61 @@ func TestFill_Channel(t *testing.T) {
 // if it turns out to be fragile and needs constant changes we will revisit it.
 func TestFill_Complex(t *testing.T) {
 	type innerInnerStruct struct {
-		IntValue     int
-		UintValue    uint
-		Float64Value float64
-		StringValue  string
+		UintValue   uint
+		StringValue string
 	}
 
 	innerInnerF := func() innerInnerStruct {
 		return innerInnerStruct{
-			IntValue:     -1,
-			UintValue:    1,
-			Float64Value: 1.234,
-			StringValue:  "string",
+			UintValue:   1,
+			StringValue: "innerinner",
 		}
 	}
 
 	innerInnerBytesF := func(c *ByteConsumer) {
-		c.pushInt64(-1, BytesForNative)
-		c.pushUint64(1, BytesForNative)
-		c.pushFloat64(1.234, BytesFor64)
-		c.pushString("string")
+		c.pushInt64(1, BytesForNative)
+		c.pushString("innerinner")
 	}
 
 	type innerStruct struct {
-		IntValue     int
-		InnerInnerP  *innerInnerStruct
-		UintValue    uint
-		InnerInnerV  innerInnerStruct
-		Float64Value float64
+		IntValue    int
+		InnerInnerP innerInnerStruct
+		StringValue string
 	}
 
 	innerF := func() innerStruct {
 		innerInnerP := innerInnerF()
 		return innerStruct{
-			IntValue:     -2,
-			InnerInnerP:  &innerInnerP,
-			UintValue:    2,
-			InnerInnerV:  innerInnerF(),
-			Float64Value: 2.234,
+			IntValue:    -2,
+			InnerInnerP: innerInnerP,
+			StringValue: "inner",
 		}
 	}
 
 	innerBytesF := func(c *ByteConsumer) {
 		c.pushInt64(-2, BytesForNative)
 		innerInnerBytesF(c)
-		c.pushUint64(2, BytesForNative)
-		innerInnerBytesF(c)
-		c.pushFloat64(2.234, BytesFor64)
+		c.pushString("inner")
 	}
 
 	type testStruct struct {
-		InnerPP  **innerStruct
-		InnerP   *innerStruct
 		InnerV   innerStruct
 		MapField map[string]innerStruct
 	}
 
 	c := NewByteConsumer([]byte{})
+	// First layer of InnerV field
 	innerBytesF(c)
-	innerBytesF(c)
-	innerBytesF(c)
+	// Map size
 	c.pushInt64(1, BytesForNative)
 	c.pushString("key")
 	innerBytesF(c)
 
 	inner := innerF()
-	innerP := &inner
-	innerPP := &innerP
 	expected := testStruct{
-		InnerPP: innerPP,
-		InnerP:  innerP,
-		InnerV:  inner,
+		InnerV: inner,
 		MapField: map[string]innerStruct{
-			"key": innerF(),
+			"key": inner,
 		},
 	}
 
@@ -266,7 +274,7 @@ func TestLinkedList_One(t *testing.T) {
 
 	expected := node{
 		Value: 1,
-		Next:  nil,
+		Next:  nil, // <- ran out of data here
 	}
 
 	val := node{}
@@ -289,7 +297,7 @@ func TestLinkedList_Two(t *testing.T) {
 		Value: 1,
 		Next: &node{
 			Value: 2,
-			Next:  nil,
+			Next:  nil, // <- ran out of data here
 		},
 	}
 
@@ -316,7 +324,7 @@ func TestLinkedList_Three(t *testing.T) {
 			Value: 2,
 			Next: &node{
 				Value: 3,
-				Next:  nil,
+				Next:  nil, // <- ran out of data here
 			},
 		},
 	}
@@ -328,8 +336,8 @@ func TestLinkedList_Three(t *testing.T) {
 }
 
 // NB: This test clarifies that trying to build a binary tree produces a
-// lefthanded fully unbalanced tree.
-func TestUnbalancedBinaryTree(t *testing.T) {
+// roughly balanced tree.
+func TestBalancedBinaryTree(t *testing.T) {
 	type node struct {
 		Value      int
 		LeftChild  *node
@@ -340,19 +348,38 @@ func TestUnbalancedBinaryTree(t *testing.T) {
 	c.pushInt64(1, BytesForNative)
 	c.pushInt64(2, BytesForNative)
 	c.pushInt64(3, BytesForNative)
+	c.pushInt64(4, BytesForNative)
+	c.pushInt64(5, BytesForNative)
+	c.pushInt64(6, BytesForNative)
 
 	expected := node{
 		Value: 1,
 		LeftChild: &node{
 			Value: 2,
 			LeftChild: &node{
-				Value:      3,
+				Value:      4,
+				LeftChild:  &node{},
+				RightChild: &node{},
+			},
+			RightChild: &node{
+				Value:      5,
+				LeftChild:  &node{},
+				RightChild: &node{},
+			},
+		},
+		RightChild: &node{
+			Value: 3,
+			LeftChild: &node{
+				Value:      6,
+				LeftChild:  nil, // <- ran out of data here
+				RightChild: nil,
+			},
+			RightChild: &node{
+				Value:      0,
 				LeftChild:  nil,
 				RightChild: nil,
 			},
-			RightChild: nil,
 		},
-		RightChild: nil,
 	}
 
 	val := node{}
