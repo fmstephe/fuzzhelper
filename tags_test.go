@@ -336,6 +336,7 @@ func TestFuzzTags_MapLength(t *testing.T) {
 
 	// Create map of size 3
 	c.pushUint64(3, BytesForNative)
+	// Values for DefaultMap
 	c.pushInt64(1, BytesForNative)
 	c.pushInt64(-1, BytesForNative)
 	c.pushInt64(2, BytesForNative)
@@ -346,12 +347,15 @@ func TestFuzzTags_MapLength(t *testing.T) {
 	// Create a map of size 1, the length value consumed will be 4, but
 	// the length min/max forces the size to 1
 	c.pushUint64(4, BytesForNative)
+	// Values for OneMap
 	c.pushInt64(1, BytesForNative)
 	c.pushInt64(-1, BytesForNative)
 
 	// Create a map of size 4, the length value consumed will be 10, but
 	// because the max length is 5 the fitted value will be 4
 	c.pushUint64(10, BytesForNative)
+
+	// Values for FiveMap
 	c.pushInt64(1, BytesForNative)
 	c.pushInt64(-1, BytesForNative)
 	c.pushInt64(2, BytesForNative)
@@ -416,6 +420,8 @@ func TestFuzzTags_MapLengthKeysAndValues(t *testing.T) {
 	c.pushBytes([]byte("ab"))
 	// Slice Value of length 5
 	c.pushInt64(11, BytesForNative)
+
+	// Values "ab" slice
 	c.pushInt64(1, BytesForNative)
 	c.pushInt64(2, BytesForNative)
 	c.pushInt64(3, BytesForNative)

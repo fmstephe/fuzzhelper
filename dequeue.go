@@ -18,13 +18,13 @@ func (d *dequeue[T]) addMany(newValues []T) {
 	d.values = append(d.values, newValues...)
 }
 
-func (d *dequeue[T]) popFront() T {
+func (d *dequeue[T]) popFirst() T {
 	value := d.values[0]
 	d.values = d.values[1:]
 	return value
 }
 
-func (d *dequeue[T]) popBack() T {
+func (d *dequeue[T]) popLast() T {
 	value := d.values[len(d.values)-1]
 	d.values = d.values[:len(d.values)-1]
 	return value

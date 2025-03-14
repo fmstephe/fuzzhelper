@@ -10,7 +10,10 @@ type fillFunc func() []fillFunc
 
 func newFillFunc(value reflect.Value, c *ByteConsumer, tags fuzzTags) fillFunc {
 	return func() []fillFunc {
-		return fill(value, c, tags)
+		println(fmt.Sprintf("before %#v\n", value.Interface()))
+		ffs := fill(value, c, tags)
+		println(fmt.Sprintf("after %#v\n", value.Interface()))
+		return ffs
 	}
 }
 
@@ -22,9 +25,8 @@ func Fill(root any, c *ByteConsumer) {
 	values.addMany(fillFuncs)
 
 	for values.len() != 0 {
-		ff := values.popBack()
+		ff := values.popFirst()
 		fillFuncs := ff()
-		slices.Reverse(fillFuncs)
 		values.addMany(fillFuncs)
 	}
 
@@ -227,7 +229,7 @@ func fillFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 }
 
 func fillStruct(value reflect.Value, c *ByteConsumer) []fillFunc {
-	print("struct")
+	print("struct ", value.Type().Name())
 	canSet(value)
 
 	newValues := []fillFunc{}
@@ -236,7 +238,7 @@ func fillStruct(value reflect.Value, c *ByteConsumer) []fillFunc {
 		vField := value.Field(i)
 		tField := vType.Field(i)
 		tags := newFuzzTags(value, tField)
-		newValues = append(newValues, newFillFunc(vField, c, tags))
+		newValues = append(newValues, fill(vField, c, tags)...)
 	}
 
 	return newValues
@@ -276,7 +278,7 @@ func fillSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
 
 	newValues := []fillFunc{}
 	for i := 0; i < value.Len(); i++ {
-		newValues = append(newValues, newFillFunc(value.Index(i), c, tags))
+		newValues = append(newValues, fill(value.Index(i), c, tags)...)
 	}
 
 	return newValues
@@ -288,7 +290,7 @@ func fillArray(value reflect.Value, c *ByteConsumer) []fillFunc {
 
 	newValues := []fillFunc{}
 	for i := 0; i < value.Len(); i++ {
-		newValues = append(newValues, newFillFunc(value.Index(i), c, newEmptyFuzzTags()))
+		newValues = append(newValues, fill(value.Index(i), c, newEmptyFuzzTags())...)
 	}
 	return newValues
 }
@@ -316,20 +318,18 @@ func fillMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
 		mapKey := mapKeyP.Elem()
 		// Note here that the tags used to create this map are also
 		// used to create the key
-		newValues = append(newValues, newFillFunc(mapKey, c, tags))
+		newValues = append(newValues, fill(mapKey, c, tags)...)
 
 		// Create the value
 		mapValP := reflect.New(valType)
 		mapVal := mapValP.Elem()
 		// Note here that the tags used to create this map are also
 		// used to create the value
-		newValues = append(newValues, newFillFunc(mapVal, c, tags))
+		newValues = append(newValues, fill(mapVal, c, tags)...)
 
 		// Add key/val to map
-		newValues = append(newValues, func() []fillFunc {
-			newMap.SetMapIndex(mapKey, mapVal)
-			return []fillFunc{}
-		})
+		println("setting map element")
+		newMap.SetMapIndex(mapKey, mapVal)
 	}
 
 	value.Set(newMap)
@@ -360,7 +360,7 @@ func fillChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
 		newVal := newValP.Elem()
 		// Note here that the tags used to create this chan are also
 		// used to create the values added to the channel
-		newValues = append(newValues, newFillFunc(newVal, c, tags))
+		newValues = append(newValues, fill(newVal, c, tags)...)
 
 		// Put the element on the channel
 		newValues = append(newValues, func() []fillFunc {
