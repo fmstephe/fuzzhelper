@@ -572,7 +572,8 @@ type methodStruct struct {
 	FloatField5 float64 `fuzz-float-method:"FloatOptions"`
 }
 
-func (s methodStruct) StringOptions() []string {
+// Pointer receiver method
+func (s *methodStruct) StringOptions() []string {
 	return []string{
 		"zero",
 		"one",
@@ -583,6 +584,7 @@ func (s methodStruct) StringOptions() []string {
 	}
 }
 
+// Value receiver method
 func (s methodStruct) IntOptions() []int64 {
 	return []int64{
 		0,
@@ -594,7 +596,8 @@ func (s methodStruct) IntOptions() []int64 {
 	}
 }
 
-func (s methodStruct) UintOptions() []uint64 {
+// Pointer receiver method
+func (s *methodStruct) UintOptions() []uint64 {
 	return []uint64{
 		0,
 		10,
@@ -605,6 +608,7 @@ func (s methodStruct) UintOptions() []uint64 {
 	}
 }
 
+// Value receiver method
 func (s methodStruct) FloatOptions() []float64 {
 	return []float64{
 		0.0,
