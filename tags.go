@@ -353,10 +353,16 @@ func callMethodFromTag[T any](structVal reflect.Value, field reflect.StructField
 		return val, false
 	}
 
-	method := structVal.MethodByName(methodName)
+	// Try to get the method from the struct
+	// We look for pointer receiver method first, then value receivers
+	// We it in this order under the assumption that people usually use pointer receivers
+	method := structVal.Addr().MethodByName(methodName)
 	if !method.IsValid() {
-		println("no method found: ", methodName, field.Name, structVal.Type().String())
-		return val, false
+		method = structVal.MethodByName(methodName)
+		if !method.IsValid() {
+			println("no method found: ", methodName, field.Name, structVal.Type().String())
+			return val, false
+		}
 	}
 
 	methodType := method.Type()
