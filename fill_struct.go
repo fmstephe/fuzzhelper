@@ -200,45 +200,20 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
-func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) int {
 	val := int(c.Int64(BytesForNative))
 	mapLen := tags.fitMapLength(val)
 
 	//print("map ", mapLen)
 	if !canSet(value) && value.IsNil() {
-		return []visitFunc{}
+		return 0
 	}
 
 	mapType := value.Type()
-	keyType := mapType.Key()
-	valType := mapType.Elem()
-
-	newMap := reflect.MakeMap(mapType)
-	newValues := []visitFunc{}
-
-	for range mapLen {
-		// Create the key
-		mapKeyP := reflect.New(keyType)
-		mapKey := mapKeyP.Elem()
-		// Note here that the tags used to create this map are also
-		// used to create the key
-		newValues = append(newValues, visitValue(v, mapKey, c, tags)...)
-
-		// Create the value
-		mapValP := reflect.New(valType)
-		mapVal := mapValP.Elem()
-		// Note here that the tags used to create this map are also
-		// used to create the value
-		newValues = append(newValues, visitValue(v, mapVal, c, tags)...)
-
-		// Add key/val to map
-		//println("setting map element")
-		newMap.SetMapIndex(mapKey, mapVal)
-	}
-
+	newMap := reflect.MakeMapWithSize(mapType, mapLen)
 	value.Set(newMap)
 
-	return newValues
+	return mapLen
 }
 
 // TODO there is a bug here, if the channel can't be set, but is non-nil we will still try to set it

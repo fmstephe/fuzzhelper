@@ -14,7 +14,7 @@ type visitCallback interface {
 	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitFloat(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitChan(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitMap(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
+	visitMap(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitSlice(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitString(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
@@ -98,7 +98,34 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 		return []visitFunc{}
 
 	case reflect.Map:
-		return callback.visitMap(value, c, tags)
+		mapLen := callback.visitMap(value, c, tags)
+
+		mapType := value.Type()
+		keyType := mapType.Key()
+		valType := mapType.Elem()
+
+		newValues := []visitFunc{}
+		for range mapLen {
+			// Create the key
+			mapKeyP := reflect.New(keyType)
+			mapKey := mapKeyP.Elem()
+			// Note here that the tags used to create this map are also
+			// used to create the key
+			newValues = append(newValues, visitValue(callback, mapKey, c, tags)...)
+
+			// Create the value
+			mapValP := reflect.New(valType)
+			mapVal := mapValP.Elem()
+			// Note here that the tags used to create this map are also
+			// used to create the value
+			newValues = append(newValues, visitValue(callback, mapVal, c, tags)...)
+
+			// Add key/val to map
+			//println("setting map element")
+			value.SetMapIndex(mapKey, mapVal)
+		}
+
+		return newValues
 
 	case reflect.Pointer:
 		return callback.visitPointer(value, c, tags)
