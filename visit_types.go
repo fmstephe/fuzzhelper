@@ -18,7 +18,6 @@ type visitCallback interface {
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags)
 	visitSlice(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitString(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitStruct(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 }
 
 func newVisitFunc(callback visitCallback, value reflect.Value, c *ByteConsumer, tags fuzzTags) visitFunc {
@@ -161,7 +160,19 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 		return callback.visitString(value, c, tags)
 
 	case reflect.Struct:
-		return callback.visitStruct(value, c, tags)
+		//print("struct ", value.Type().Name())
+		canSet(value)
+
+		newValues := []visitFunc{}
+		vType := value.Type()
+		for i := 0; i < vType.NumField(); i++ {
+			vField := value.Field(i)
+			tField := vType.Field(i)
+			tags := newFuzzTags(value, tField)
+			newValues = append(newValues, visitValue(callback, vField, c, tags)...)
+		}
+
+		return newValues
 
 	case reflect.UnsafePointer:
 		// Ignored

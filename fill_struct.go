@@ -148,22 +148,6 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 	return []visitFunc{}
 }
 
-func (v *fillVisitor) visitStruct(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
-	//print("struct ", value.Type().Name())
-	canSet(value)
-
-	newValues := []visitFunc{}
-	vType := value.Type()
-	for i := 0; i < vType.NumField(); i++ {
-		vField := value.Field(i)
-		tField := vType.Field(i)
-		tags := newFuzzTags(value, tField)
-		newValues = append(newValues, visitValue(v, vField, c, tags)...)
-	}
-
-	return newValues
-}
-
 func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags) {
 	//print("pointer")
 	if !canSet(value) && value.IsNil() {
