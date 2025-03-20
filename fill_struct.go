@@ -164,10 +164,10 @@ func (v *fillVisitor) visitStruct(value reflect.Value, c *ByteConsumer, _ fuzzTa
 	return newValues
 }
 
-func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
+func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags) {
 	//print("pointer")
 	if !canSet(value) && value.IsNil() {
-		return []visitFunc{}
+		return
 	}
 
 	if value.IsNil() {
@@ -176,9 +176,6 @@ func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzT
 		vType := pType.Elem()
 		newVal := reflect.New(vType)
 		value.Set(newVal)
-	}
-	return []visitFunc{
-		newVisitFunc(v, value.Elem(), c, newEmptyFuzzTags()),
 	}
 }
 
