@@ -16,7 +16,7 @@ type visitCallback interface {
 	visitChan(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitMap(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitSlice(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
+	visitSlice(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitString(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitStruct(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 }
@@ -104,7 +104,13 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 		return callback.visitPointer(value, c, tags)
 
 	case reflect.Slice:
-		return callback.visitSlice(value, c, tags)
+		sliceLen := callback.visitSlice(value, c, tags)
+
+		newValues := []visitFunc{}
+		for i := range sliceLen {
+			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags)...)
+		}
+		return newValues
 
 	case reflect.String:
 		return callback.visitString(value, c, tags)

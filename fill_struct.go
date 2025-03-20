@@ -182,13 +182,13 @@ func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzT
 	}
 }
 
-func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) int {
 	val := int(c.Int64(BytesForNative))
 	sliceLen := tags.fitSliceLengthVal(val)
 
 	//print("slice ", sliceLen)
 	if !canSet(value) && value.IsNil() {
-		return []visitFunc{}
+		return 0
 	}
 
 	if value.IsNil() {
@@ -196,12 +196,7 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 		value.Set(newSlice)
 	}
 
-	newValues := []visitFunc{}
-	for i := 0; i < value.Len(); i++ {
-		newValues = append(newValues, visitValue(v, value.Index(i), c, tags)...)
-	}
-
-	return newValues
+	return sliceLen
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
