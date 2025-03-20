@@ -27,7 +27,7 @@ func canSet(value reflect.Value) bool {
 	return false
 }
 
-func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	// First check if there is a list of valid string values
 	if len(tags.stringValues) != 0 {
 		val := c.Uint64(BytesForNative)
@@ -35,11 +35,11 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 
 		//print("string ", len(str))
 		if !canSet(value) {
-			return []visitFunc{}
+			return
 		}
 
 		value.SetString(str)
-		return []visitFunc{}
+		return
 	}
 
 	lengthVal := int(c.Int64(BytesForNative))
@@ -47,27 +47,27 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 
 	//print("string ", strLength)
 	if !canSet(value) {
-		return []visitFunc{}
+		return
 	}
 
 	val := c.String(strLength)
 	value.SetString(val)
 
-	return []visitFunc{}
+	return
 }
 
-func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
+func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags) {
 	//print("bool")
 	if !canSet(value) {
-		return []visitFunc{}
+		return
 	}
 	val := c.Bool()
 	value.SetBool(val)
 
-	return []visitFunc{}
+	return
 }
 
-func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	//print("int")
 
 	// First check there is a list of valid int values
@@ -75,24 +75,24 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTa
 		val := c.Uint64(BytesForNative)
 		intVal := tags.intValues[val%uint64(len(tags.intValues))]
 		if !canSet(value) {
-			return []visitFunc{}
+			return
 		}
 
 		value.SetInt(intVal)
-		return []visitFunc{}
+		return
 	}
 
 	if !canSet(value) {
-		return []visitFunc{}
+		return
 	}
 	val := c.Int64(value.Type().Size())
 	fittedVal := tags.fitIntVal(val)
 	value.SetInt(fittedVal)
 
-	return []visitFunc{}
+	return
 }
 
-func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	//print("uint")
 
 	// First check there is a list of valid uint values
@@ -100,29 +100,29 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 		val := c.Uint64(BytesForNative)
 		uintVal := tags.uintValues[val%uint64(len(tags.uintValues))]
 		if !canSet(value) {
-			return []visitFunc{}
+			return
 		}
 
 		value.SetUint(uintVal)
-		return []visitFunc{}
+		return
 	}
 
 	if !canSet(value) {
-		return []visitFunc{}
+		return
 	}
 	val := c.Uint64(value.Type().Size())
 	fittedVal := tags.fitUintVal(val)
 	value.SetUint(fittedVal)
 
-	return []visitFunc{}
+	return
 }
 
-func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	//println("uintptr: ignored")
-	return []visitFunc{}
+	return
 }
 
-func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	//print("float")
 
 	// First check there is a list of valid uint values
@@ -130,22 +130,22 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 		val := c.Uint64(BytesForNative)
 		floatVal := tags.floatValues[val%uint64(len(tags.floatValues))]
 		if !canSet(value) {
-			return []visitFunc{}
+			return
 		}
 
 		value.SetFloat(floatVal)
-		return []visitFunc{}
+		return
 	}
 
 	if !canSet(value) {
-		return []visitFunc{}
+		return
 	}
 
 	val := c.Float64(value.Type().Size())
 	fittedVal := tags.fitFloatVal(val)
 	value.SetFloat(fittedVal)
 
-	return []visitFunc{}
+	return
 }
 
 func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags) {

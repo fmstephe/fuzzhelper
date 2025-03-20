@@ -8,16 +8,16 @@ import (
 type visitFunc func() []visitFunc
 
 type visitCallback interface {
-	visitBool(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitInt(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitUint(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitFloat(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
+	visitBool(reflect.Value, *ByteConsumer, fuzzTags)
+	visitInt(reflect.Value, *ByteConsumer, fuzzTags)
+	visitUint(reflect.Value, *ByteConsumer, fuzzTags)
+	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags)
+	visitFloat(reflect.Value, *ByteConsumer, fuzzTags)
 	visitChan(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitMap(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags)
 	visitSlice(reflect.Value, *ByteConsumer, fuzzTags) int
-	visitString(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
+	visitString(reflect.Value, *ByteConsumer, fuzzTags)
 }
 
 func newVisitFunc(callback visitCallback, value reflect.Value, c *ByteConsumer, tags fuzzTags) visitFunc {
@@ -52,19 +52,24 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 
 	switch value.Kind() {
 	case reflect.Bool:
-		return callback.visitBool(value, c, tags)
+		callback.visitBool(value, c, tags)
+		return []visitFunc{}
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return callback.visitInt(value, c, tags)
+		callback.visitInt(value, c, tags)
+		return []visitFunc{}
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return callback.visitUint(value, c, tags)
+		callback.visitUint(value, c, tags)
+		return []visitFunc{}
 
 	case reflect.Uintptr:
-		return callback.visitUintptr(value, c, tags)
+		callback.visitUintptr(value, c, tags)
+		return []visitFunc{}
 
 	case reflect.Float32, reflect.Float64:
-		return callback.visitFloat(value, c, tags)
+		callback.visitFloat(value, c, tags)
+		return []visitFunc{}
 
 	case reflect.Complex64, reflect.Complex128:
 		// Complex values are ignored Only because I don't use them,
@@ -157,7 +162,8 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 		return newValues
 
 	case reflect.String:
-		return callback.visitString(value, c, tags)
+		callback.visitString(value, c, tags)
+		return []visitFunc{}
 
 	case reflect.Struct:
 		//print("struct ", value.Type().Name())
