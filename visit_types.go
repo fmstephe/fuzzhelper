@@ -13,7 +13,6 @@ type visitCallback interface {
 	visitUint(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitFloat(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitArray(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitChan(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitMap(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
@@ -24,9 +23,9 @@ type visitCallback interface {
 
 func newVisitFunc(callback visitCallback, value reflect.Value, c *ByteConsumer, tags fuzzTags) visitFunc {
 	return func() []visitFunc {
-		println(fmt.Sprintf("before %#v\n", value.Interface()))
+		//println(fmt.Sprintf("before %#v\n", value.Interface()))
 		ffs := visitValue(callback, value, c, tags)
-		println(fmt.Sprintf("after %#v\n", value.Interface()))
+		//println(fmt.Sprintf("after %#v\n", value.Interface()))
 		return ffs
 	}
 }
@@ -43,7 +42,7 @@ func visitRoot(callback visitCallback, root any, c *ByteConsumer) {
 		values.addMany(visitFuncs)
 	}
 
-	println("")
+	//println("")
 }
 
 func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
@@ -76,7 +75,14 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 		return []visitFunc{}
 
 	case reflect.Array:
-		return callback.visitArray(value, c, tags)
+		//print("array")
+		canSet(value)
+
+		newValues := []visitFunc{}
+		for i := 0; i < value.Len(); i++ {
+			newValues = append(newValues, visitValue(callback, value.Index(i), c, newEmptyFuzzTags())...)
+		}
+		return newValues
 
 	case reflect.Chan:
 		return callback.visitChan(value, c, tags)

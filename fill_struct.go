@@ -19,11 +19,11 @@ func canSet(value reflect.Value) bool {
 	// these.  Once we drill past this unsettable level we will
 	// fill in values recursively as we find them.
 	if value.CanSet() {
-		println(": can set")
+		//println(": can set")
 		return true
 	}
 
-	println(": can't set")
+	//println(": can't set")
 	return false
 }
 
@@ -33,7 +33,7 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 		val := c.Uint64(BytesForNative)
 		str := tags.stringValues[val%uint64(len(tags.stringValues))]
 
-		print("string ", len(str))
+		//print("string ", len(str))
 		if !canSet(value) {
 			return []visitFunc{}
 		}
@@ -45,7 +45,7 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 	lengthVal := int(c.Int64(BytesForNative))
 	strLength := tags.fitStringLength(lengthVal)
 
-	print("string ", strLength)
+	//print("string ", strLength)
 	if !canSet(value) {
 		return []visitFunc{}
 	}
@@ -57,7 +57,7 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 }
 
 func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
-	print("bool")
+	//print("bool")
 	if !canSet(value) {
 		return []visitFunc{}
 	}
@@ -68,7 +68,7 @@ func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags
 }
 
 func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
-	print("int")
+	//print("int")
 
 	// First check there is a list of valid int values
 	if len(tags.intValues) != 0 {
@@ -93,7 +93,7 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTa
 }
 
 func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
-	print("uint")
+	//print("uint")
 
 	// First check there is a list of valid uint values
 	if len(tags.uintValues) != 0 {
@@ -118,12 +118,12 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 }
 
 func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
-	println("uintptr: ignored")
+	//println("uintptr: ignored")
 	return []visitFunc{}
 }
 
 func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
-	print("float")
+	//print("float")
 
 	// First check there is a list of valid uint values
 	if len(tags.floatValues) != 0 {
@@ -149,7 +149,7 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 }
 
 func (v *fillVisitor) visitStruct(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
-	print("struct ", value.Type().Name())
+	//print("struct ", value.Type().Name())
 	canSet(value)
 
 	newValues := []visitFunc{}
@@ -165,7 +165,7 @@ func (v *fillVisitor) visitStruct(value reflect.Value, c *ByteConsumer, _ fuzzTa
 }
 
 func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
-	print("pointer")
+	//print("pointer")
 	if !canSet(value) && value.IsNil() {
 		return []visitFunc{}
 	}
@@ -186,7 +186,7 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 	val := int(c.Int64(BytesForNative))
 	sliceLen := tags.fitSliceLengthVal(val)
 
-	print("slice ", sliceLen)
+	//print("slice ", sliceLen)
 	if !canSet(value) && value.IsNil() {
 		return []visitFunc{}
 	}
@@ -204,23 +204,12 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 	return newValues
 }
 
-func (v *fillVisitor) visitArray(value reflect.Value, c *ByteConsumer, _ fuzzTags) []visitFunc {
-	print("array")
-	canSet(value)
-
-	newValues := []visitFunc{}
-	for i := 0; i < value.Len(); i++ {
-		newValues = append(newValues, visitValue(v, value.Index(i), c, newEmptyFuzzTags())...)
-	}
-	return newValues
-}
-
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
 func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
 	val := int(c.Int64(BytesForNative))
 	mapLen := tags.fitMapLength(val)
 
-	print("map ", mapLen)
+	//print("map ", mapLen)
 	if !canSet(value) && value.IsNil() {
 		return []visitFunc{}
 	}
@@ -248,7 +237,7 @@ func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTa
 		newValues = append(newValues, visitValue(v, mapVal, c, tags)...)
 
 		// Add key/val to map
-		println("setting map element")
+		//println("setting map element")
 		newMap.SetMapIndex(mapKey, mapVal)
 	}
 
@@ -262,7 +251,7 @@ func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzT
 	val := int(c.Int64(BytesForNative))
 	chanLen := tags.fitChanLength(val)
 
-	print("chan ", chanLen)
+	//print("chan ", chanLen)
 	if !canSet(value) && value.IsNil() {
 		return []visitFunc{}
 	}
