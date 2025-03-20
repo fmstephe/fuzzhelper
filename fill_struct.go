@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-var _ visitCallback = &fillVisitor{}
+var _ valueVisitor = &fillVisitor{}
 
 type fillVisitor struct {
 }

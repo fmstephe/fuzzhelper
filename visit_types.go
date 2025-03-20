@@ -7,7 +7,7 @@ import (
 
 type visitFunc func() []visitFunc
 
-type visitCallback interface {
+type valueVisitor interface {
 	visitBool(reflect.Value, *ByteConsumer, fuzzTags)
 	visitInt(reflect.Value, *ByteConsumer, fuzzTags)
 	visitUint(reflect.Value, *ByteConsumer, fuzzTags)
@@ -20,7 +20,7 @@ type visitCallback interface {
 	visitString(reflect.Value, *ByteConsumer, fuzzTags)
 }
 
-func newVisitFunc(callback visitCallback, value reflect.Value, c *ByteConsumer, tags fuzzTags) visitFunc {
+func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags) visitFunc {
 	return func() []visitFunc {
 		//println(fmt.Sprintf("before %#v\n", value.Interface()))
 		ffs := visitValue(callback, value, c, tags)
@@ -29,7 +29,7 @@ func newVisitFunc(callback visitCallback, value reflect.Value, c *ByteConsumer, 
 	}
 }
 
-func visitRoot(callback visitCallback, root any, c *ByteConsumer) {
+func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
 	visitFuncs := visitValue(callback, reflect.ValueOf(root), c, newEmptyFuzzTags())
 
 	values := newDequeue[visitFunc]()
@@ -44,7 +44,7 @@ func visitRoot(callback visitCallback, root any, c *ByteConsumer) {
 	//println("")
 }
 
-func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
 	if c.Len() == 0 {
 		// There are no more bytes to use to visit data
 		return []visitFunc{}
