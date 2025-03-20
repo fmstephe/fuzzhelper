@@ -217,38 +217,18 @@ func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTa
 }
 
 // TODO there is a bug here, if the channel can't be set, but is non-nil we will still try to set it
-func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) []visitFunc {
+func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) int {
 	val := int(c.Int64(BytesForNative))
 	chanLen := tags.fitChanLength(val)
 
 	//print("chan ", chanLen)
 	if !canSet(value) && value.IsNil() {
-		return []visitFunc{}
+		return chanLen
 	}
-
-	chanType := value.Type()
-	valType := chanType.Elem()
 
 	// Create a channel
 	newChan := reflect.MakeChan(value.Type(), chanLen)
-	newValues := []visitFunc{}
-
-	for range chanLen {
-		// Create an element for that channel
-		newValP := reflect.New(valType)
-		newVal := newValP.Elem()
-		// Note here that the tags used to create this chan are also
-		// used to create the values added to the channel
-		newValues = append(newValues, visitValue(v, newVal, c, tags)...)
-
-		// Put the element on the channel
-		newValues = append(newValues, func() []visitFunc {
-			newChan.Send(newVal)
-			return []visitFunc{}
-		})
-	}
-
 	value.Set(newChan)
 
-	return newValues
+	return chanLen
 }

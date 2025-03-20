@@ -13,7 +13,7 @@ type visitCallback interface {
 	visitUint(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitFloat(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
-	visitChan(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
+	visitChan(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitMap(reflect.Value, *ByteConsumer, fuzzTags) int
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags) []visitFunc
 	visitSlice(reflect.Value, *ByteConsumer, fuzzTags) int
@@ -85,7 +85,22 @@ func visitValue(callback visitCallback, value reflect.Value, c *ByteConsumer, ta
 		return newValues
 
 	case reflect.Chan:
-		return callback.visitChan(value, c, tags)
+		chanLen := callback.visitChan(value, c, tags)
+		valType := value.Type().Elem()
+		newValues := []visitFunc{}
+
+		for range chanLen {
+			// Create an element for that channel
+			newValP := reflect.New(valType)
+			newVal := newValP.Elem()
+			// Note here that the tags used to create this chan are also
+			// used to create the values added to the channel
+			newValues = append(newValues, visitValue(callback, newVal, c, tags)...)
+			// newVal has been constructed, send it
+			value.Send(newVal)
+		}
+
+		return newValues
 
 	case reflect.Func:
 		// Ignored
