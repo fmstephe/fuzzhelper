@@ -8,19 +8,20 @@ import (
 type visitFunc func() []visitFunc
 
 type valueVisitor interface {
-	visitBool(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
-	visitInt(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
-	visitUint(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
-	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
-	visitFloat(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
-	visitChan(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value) int
-	visitMap(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value) int
-	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
-	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value) int
-	visitString(reflect.Value, *ByteConsumer, fuzzTags, []reflect.Value)
+	visitBool(reflect.Value, *ByteConsumer, fuzzTags, []string)
+	visitInt(reflect.Value, *ByteConsumer, fuzzTags, []string)
+	visitUint(reflect.Value, *ByteConsumer, fuzzTags, []string)
+	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags, []string)
+	visitFloat(reflect.Value, *ByteConsumer, fuzzTags, []string)
+	visitArray(reflect.Value, fuzzTags, []string)
+	visitChan(reflect.Value, *ByteConsumer, fuzzTags, []string) int
+	visitMap(reflect.Value, *ByteConsumer, fuzzTags, []string) int
+	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, []string)
+	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, []string) int
+	visitString(reflect.Value, *ByteConsumer, fuzzTags, []string)
 }
 
-func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []reflect.Value) visitFunc {
+func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) visitFunc {
 	return func() []visitFunc {
 		//println(fmt.Sprintf("before %#v\n", value.Interface()))
 		ffs := visitValue(callback, value, c, tags, path)
@@ -30,7 +31,7 @@ func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, t
 }
 
 func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
-	visitFuncs := visitValue(callback, reflect.ValueOf(root), c, newEmptyFuzzTags(), []reflect.Value{})
+	visitFuncs := visitValue(callback, reflect.ValueOf(root), c, newEmptyFuzzTags(), []string{})
 
 	values := newDequeue[visitFunc]()
 	values.addMany(visitFuncs)
@@ -44,7 +45,7 @@ func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
 	//println("")
 }
 
-func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []reflect.Value) []visitFunc {
+func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) []visitFunc {
 	if c.Len() == 0 {
 		// There are no more bytes to use to visit data
 		return []visitFunc{}
@@ -80,11 +81,12 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 
 	case reflect.Array:
 		//print("array")
+		callback.visitArray(value, tags, path)
 		canSet(value)
 
 		newValues := []visitFunc{}
 		for i := 0; i < value.Len(); i++ {
-			newValues = append(newValues, visitValue(callback, value.Index(i), c, newEmptyFuzzTags(), append(path, value))...)
+			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, append(path, "[value]"))...)
 		}
 		return newValues
 
@@ -99,7 +101,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 			newVal := newValP.Elem()
 			// Note here that the tags used to create this chan are also
 			// used to create the values added to the channel
-			newValues = append(newValues, visitValue(callback, newVal, c, tags, append(path, value))...)
+			newValues = append(newValues, visitValue(callback, newVal, c, tags, append(path, "[value]"))...)
 			// newVal has been constructed, send it
 			value.Send(newVal)
 		}
@@ -130,14 +132,14 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 			mapKey := mapKeyP.Elem()
 			// Note here that the tags used to create this map are also
 			// used to create the key
-			newValues = append(newValues, visitValue(callback, mapKey, c, tags, append(path, value))...)
+			newValues = append(newValues, visitValue(callback, mapKey, c, tags, append(path, "[key]"))...)
 
 			// Create the value
 			mapValP := reflect.New(valType)
 			mapVal := mapValP.Elem()
 			// Note here that the tags used to create this map are also
 			// used to create the value
-			newValues = append(newValues, visitValue(callback, mapVal, c, tags, append(path, value))...)
+			newValues = append(newValues, visitValue(callback, mapVal, c, tags, append(path, "[value]"))...)
 
 			// Add key/val to map
 			//println("setting map element")
@@ -149,7 +151,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 	case reflect.Pointer:
 		callback.visitPointer(value, c, tags, path)
 		return []visitFunc{
-			newVisitFunc(callback, value.Elem(), c, newEmptyFuzzTags(), append(path, value)),
+			newVisitFunc(callback, value.Elem(), c, newEmptyFuzzTags(), append(path, "*")),
 		}
 
 	case reflect.Slice:
@@ -157,7 +159,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 
 		newValues := []visitFunc{}
 		for i := range sliceLen {
-			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, append(path, value))...)
+			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, append(path, "[value]"))...)
 		}
 		return newValues
 
@@ -171,11 +173,12 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 
 		newValues := []visitFunc{}
 		vType := value.Type()
+		path = append(path, vType.Name())
 		for i := 0; i < vType.NumField(); i++ {
 			vField := value.Field(i)
 			tField := vType.Field(i)
 			tags := newFuzzTags(value, tField)
-			newValues = append(newValues, visitValue(callback, vField, c, tags, append(path, value))...)
+			newValues = append(newValues, visitValue(callback, vField, c, tags, append(path, tField.Name))...)
 		}
 
 		return newValues
