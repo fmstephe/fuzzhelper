@@ -11,6 +11,9 @@ const defaultLengthMin = 0
 const defaultLengthMax = 20
 
 type fuzzTags struct {
+	// Debugging field containing the name of the struct field the tag was
+	// taken from
+	name string
 	//
 	intMax int64
 	intMin int64
@@ -44,6 +47,8 @@ type fuzzTags struct {
 
 func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	t := newEmptyFuzzTags()
+
+	t.name = field.Name
 
 	intMin, intMax, ok := getInt64MinMax(field, "fuzz-int-range")
 	if ok {
