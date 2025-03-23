@@ -27,7 +27,7 @@ func canSet(value reflect.Value) bool {
 	return false
 }
 
-func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) {
 	// First check if there is a list of valid string values
 	if len(tags.stringValues) != 0 {
 		val := c.Uint64(BytesForNative)
@@ -56,7 +56,7 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 	return
 }
 
-func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags) {
+func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags, _ []reflect.Value) {
 	//print("bool")
 	if !canSet(value) {
 		return
@@ -67,7 +67,7 @@ func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags
 	return
 }
 
-func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) {
 	//print("int")
 
 	// First check there is a list of valid int values
@@ -92,7 +92,7 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTa
 	return
 }
 
-func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) {
 	//print("uint")
 
 	// First check there is a list of valid uint values
@@ -117,12 +117,12 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 	return
 }
 
-func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) {
 	//println("uintptr: ignored")
 	return
 }
 
-func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
+func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) {
 	//print("float")
 
 	// First check there is a list of valid uint values
@@ -148,7 +148,7 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 	return
 }
 
-func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags) {
+func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags, _ []reflect.Value) {
 	//print("pointer")
 	if !canSet(value) && value.IsNil() {
 		return
@@ -163,7 +163,7 @@ func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzT
 	}
 }
 
-func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) int {
+func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) int {
 	val := int(c.Int64(BytesForNative))
 	sliceLen := tags.fitSliceLengthVal(val)
 
@@ -181,7 +181,7 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
-func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) int {
+func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) int {
 	val := int(c.Int64(BytesForNative))
 	mapLen := tags.fitMapLength(val)
 
@@ -198,7 +198,7 @@ func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTa
 }
 
 // TODO there is a bug here, if the channel can't be set, but is non-nil we will still try to set it
-func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) int {
+func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags, _ []reflect.Value) int {
 	val := int(c.Int64(BytesForNative))
 	chanLen := tags.fitChanLength(val)
 
