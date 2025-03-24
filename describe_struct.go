@@ -45,6 +45,8 @@ func typeString(typ reflect.Type) string {
 		return "*" + typeString(typ.Elem())
 	case reflect.Slice:
 		return "[]" + typeString(typ.Elem())
+	case reflect.Map:
+		return fmt.Sprintf("map[%s]%s", typeString(typ.Key()), typeString(typ.Elem()))
 	default:
 		return typ.Name()
 	}

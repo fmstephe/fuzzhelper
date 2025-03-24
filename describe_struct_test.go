@@ -168,6 +168,20 @@ func ExampleDescribe_SliceRange() {
 	//	range min: 0.2 max: 0.7
 }
 
+func ExampleDescribe_MapRange() {
+	type testStruct struct {
+		MapField map[int64]float64 `fuzz-map-range:"3,20" fuzz-float-range:"0.2,0.7" fuzz-int-range:"5,10"`
+	}
+
+	Describe(&testStruct{})
+	// Output:*(testStruct).MapField (map[int64]float64)
+	//	range min: 3 max: 20
+	//*(testStruct).MapField[key] (int64)
+	//	range min: 5 max: 10
+	//*(testStruct).MapField[value] (float64)
+	//	range min: 0.2 max: 0.7
+}
+
 type parentStruct struct {
 	// struct processed fifth
 	PointerPointerChild **childStruct
