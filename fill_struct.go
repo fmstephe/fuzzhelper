@@ -27,37 +27,6 @@ func canSet(value reflect.Value) bool {
 	//println(": can't set")
 	return false
 }
-
-func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
-	//print(leftPad(len(path)))
-	// First check if there is a list of valid string values
-	if len(tags.stringValues) != 0 {
-		val := c.Uint64(BytesForNative)
-		str := tags.stringValues[val%uint64(len(tags.stringValues))]
-
-		//print("string ", len(str))
-		if !canSet(value) {
-			return
-		}
-
-		value.SetString(str)
-		return
-	}
-
-	lengthVal := int(c.Int64(BytesForNative))
-	strLength := tags.fitStringLength(lengthVal)
-
-	//print("string ", strLength)
-	if !canSet(value) {
-		return
-	}
-
-	val := c.String(strLength)
-	value.SetString(val)
-
-	return
-}
-
 func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags, path []string) {
 	//print(leftPad(len(path)))
 	//print("bool")
@@ -232,4 +201,39 @@ func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzT
 
 func leftPad(pad int) string {
 	return strings.Repeat(" ", pad)
+}
+
+func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+	//print(leftPad(len(path)))
+	// First check if there is a list of valid string values
+	if len(tags.stringValues) != 0 {
+		val := c.Uint64(BytesForNative)
+		str := tags.stringValues[val%uint64(len(tags.stringValues))]
+
+		//print("string ", len(str))
+		if !canSet(value) {
+			return
+		}
+
+		value.SetString(str)
+		return
+	}
+
+	lengthVal := int(c.Int64(BytesForNative))
+	strLength := tags.fitStringLength(lengthVal)
+
+	//print("string ", strLength)
+	if !canSet(value) {
+		return
+	}
+
+	val := c.String(strLength)
+	value.SetString(val)
+
+	return
+}
+
+func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path []string) {
+	// Do nothing - the struct is fixed in size and we do nothing here
+	// Each of it's fields will be visited and we will fill those
 }

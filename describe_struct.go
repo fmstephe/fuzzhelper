@@ -2,7 +2,9 @@ package fuzzhelper
 
 import (
 	"fmt"
+	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -17,38 +19,34 @@ func Describe(root any) {
 	visitRoot(&describeVisitor{}, root, NewByteConsumer([]byte{1, 2, 3}))
 }
 
+var pointerRegex = regexp.MustCompile(`\.(\**)\(`)
+
 func pathString(value reflect.Value, path []string) string {
-	pStr := ""
-
-	for i, p := range path {
-		if strings.HasPrefix(p, "[") && len(pStr) > 0 {
-			// Delete previous "."
-			pStr = pStr[:len(pStr)-1]
-		}
-
-		pStr += p
-		if !(p == "*" || i == len(path)-1) {
-			pStr += "."
-		}
-	}
+	pStr := strings.Join(path, ".")
+	pStr = strings.ReplaceAll(pStr, "*.", "*")
+	pStr = strings.ReplaceAll(pStr, ".[", "[")
+	pStr = strings.ReplaceAll(pStr, ".(", "(")
+	// This complex regex replace pulls leading pointer '*' inside the (typeName) parenthesis
+	// This all feels a bit convoluted - will think about it a bit more
+	pStr = pointerRegex.ReplaceAllString(pStr, "($1")
 
 	if len(pStr) > 0 {
 		pStr += " "
 	}
 
-	pStr = pStr + "(" + kindString(value) + ")"
+	pStr = pStr + "(" + typeString(value.Type()) + ")"
 
 	return pStr
 }
 
-func kindString(value reflect.Value) string {
-	switch value.Kind() {
+func typeString(typ reflect.Type) string {
+	switch typ.Kind() {
 	case reflect.Pointer:
-		return "*"
-	case reflect.Struct:
-		return value.Type().Name()
+		return "*" + typeString(typ.Elem())
+	case reflect.Slice:
+		return "[]" + typeString(typ.Elem())
 	default:
-		return value.Kind().String()
+		return typ.Name()
 	}
 }
 
@@ -68,48 +66,33 @@ func methodValuesString[T any](v []T) string {
 	return shortenString(fmt.Sprintf("%v", v))
 }
 
-func introDescription(value reflect.Value, tags fuzzTags, path []string) {
-	println(pathString(value, path))
-	print(leftPad(len(path)))
-	if value.Kind() == reflect.Pointer {
-		print("*")
-	} else {
-		print(value.Kind().String())
+func isExported(name string) bool {
+	if name == "" {
+		return false
 	}
+
+	firstRune, _ := utf8.DecodeRuneInString(name)
+	return unicode.IsUpper(firstRune)
+}
+
+func introDescription(value reflect.Value, tags fuzzTags, path []string) {
+	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
 
 	// Value is settable
 	if value.CanSet() {
-		println(": can set")
 		return
 	}
 
+	// Field is not settable, lets find out why
+
 	// If this is a field we want to make a very explicit message describing that fact
-	if tags.fieldName != "" {
-		firstRune, _ := utf8.DecodeRuneInString(tags.fieldName)
-		if !unicode.IsUpper(firstRune) {
-			println(": not exported, will ignore")
-			return
-		}
+	if !isExported(tags.fieldName) {
+		fmt.Fprintf(os.Stdout, "\tnot exported, will ignore\n")
+		return
 	}
 
 	// If we reached here then the value cannot be set
-	println(": can't set")
-}
-
-func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
-	introDescription(value, tags, path)
-
-	// First check if there is a list of valid string values
-	if len(tags.stringValues) != 0 {
-		print(leftPad(len(path)))
-		println(fmt.Sprintf("method (%s): %s", tags.stringValuesMethod, methodValuesString(tags.stringValues)))
-		return
-	}
-
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %d max: %d", tags.stringLengthMin, tags.stringLengthMax))
-	return
-
+	fmt.Fprintf(os.Stdout, "\tcan't set\n")
 }
 
 func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
@@ -120,32 +103,37 @@ func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags f
 func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
 	introDescription(value, tags, path)
 
-	// First check if there is a list of valid string values
-	if len(tags.stringValues) != 0 {
-		print(leftPad(len(path)))
-		println(fmt.Sprintf("method (%s): %s", tags.intValuesMethod, methodValuesString(tags.intValues)))
+	if !value.CanSet() {
+		// If we can't set this value don't provide any other details about it
 		return
 	}
 
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %d max: %d", tags.intMin, tags.intMax))
+	// First check if there is a list of valid string values
+	if len(tags.intValues) != 0 {
+		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.intValuesMethod, methodValuesString(tags.intValues)))
+		return
+	}
+
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.intMin, tags.intMax))
 	return
 
 }
 
 func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
 	introDescription(value, tags, path)
-	//print("uint")
 
-	// First check if there is a list of valid uint values
-	if len(tags.uintValues) != 0 {
-		print(leftPad(len(path)))
-		println(fmt.Sprintf("method (%s): %s", tags.uintValuesMethod, methodValuesString(tags.uintValues)))
+	if !value.CanSet() {
+		// If we can't set this value don't provide any other details about it
 		return
 	}
 
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %d max: %d", tags.uintMin, tags.uintMax))
+	// First check if there is a list of valid uint values
+	if len(tags.uintValues) != 0 {
+		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.uintValuesMethod, methodValuesString(tags.uintValues)))
+		return
+	}
+
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.uintMin, tags.uintMax))
 	return
 }
 
@@ -158,15 +146,18 @@ func (v *describeVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tag
 func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
 	introDescription(value, tags, path)
 
-	// First check if there is a list of valid float values
-	if len(tags.floatValues) != 0 {
-		print(leftPad(len(path)))
-		println(fmt.Sprintf("method (%s): %s", tags.floatValuesMethod, methodValuesString(tags.floatValues)))
+	if !value.CanSet() {
+		// If we can't set this value don't provide any other details about it
 		return
 	}
 
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %f max: %f", tags.floatMin, tags.floatMax))
+	// First check if there is a list of valid float values
+	if len(tags.floatValues) != 0 {
+		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.floatValuesMethod, methodValuesString(tags.floatValues)))
+		return
+	}
+
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %g max: %g", tags.floatMin, tags.floatMax))
 	return
 }
 
@@ -175,18 +166,27 @@ func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path []
 }
 
 func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
-	introDescription(value, tags, path)
+	//introDescription(value, tags, path)
+
+	if !canSet(value) {
+		return
+	}
+
+	// allocate a value for value to point to
+	pType := value.Type()
+	vType := pType.Elem()
+	newVal := reflect.New(vType)
+	value.Set(newVal)
 }
 
 func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
 	introDescription(value, tags, path)
 
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %d max: %d", tags.sliceLengthMin, tags.sliceLengthMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.sliceLengthMin, tags.sliceLengthMax))
 
 	sliceLen := 1
 
-	//print("slice ", sliceLen)
+	//fmt.Fprint(os.Stdout, "slice ", sliceLen)
 	if !canSet(value) && value.IsNil() {
 		return 0
 	}
@@ -203,12 +203,11 @@ func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags 
 func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
 	introDescription(value, tags, path)
 
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %d max: %d", tags.mapLengthMin, tags.mapLengthMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.mapLengthMin, tags.mapLengthMax))
 
 	mapLen := 1
 
-	//print("map ", mapLen)
+	//fmt.Fprint(os.Stdout, "map ", mapLen)
 	if !canSet(value) && value.IsNil() {
 		return 0
 	}
@@ -224,12 +223,11 @@ func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fu
 func (v *describeVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
 	introDescription(value, tags, path)
 
-	print(leftPad(len(path)))
-	println(fmt.Sprintf("range min: %d max: %d", tags.chanLengthMin, tags.chanLengthMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.chanLengthMin, tags.chanLengthMax))
 
 	chanLen := 1
 
-	//print("chan ", chanLen)
+	//fmt.Fprint(os.Stdout, "chan ", chanLen)
 	if !canSet(value) && value.IsNil() {
 		return chanLen
 	}
@@ -239,4 +237,30 @@ func (v *describeVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags f
 	value.Set(newChan)
 
 	return chanLen
+}
+
+func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+	introDescription(value, tags, path)
+
+	if !value.CanSet() {
+		// If we can't set this value don't provide any other details about it
+		return
+	}
+
+	// First check if there is a list of valid string values
+	if len(tags.stringValues) != 0 {
+		fmt.Fprintf(os.Stdout, "\tmethod (%s): %s\n", tags.stringValuesMethod, methodValuesString(tags.stringValues))
+		return
+	}
+
+	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.stringLengthMin, tags.stringLengthMax)
+	return
+}
+
+func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path []string) {
+	if !value.CanSet() {
+		// We only describe a struct if we can't set it
+		// If it can be set then it will be described via its fields
+		introDescription(value, tags, path)
+	}
 }
