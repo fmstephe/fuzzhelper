@@ -163,6 +163,11 @@ func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags 
 	return
 }
 
+func (v *describeVisitor) visitComplex(value reflect.Value, tags fuzzTags, path []string) {
+	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
+	fmt.Fprintln(os.Stdout, "\tComplex numbers are not supported, will ignore (if this upsets you we can probably add it)")
+}
+
 func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path []string) {
 	introDescription(value, tags, path)
 }
@@ -221,24 +226,9 @@ func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fu
 	return mapLen
 }
 
-// TODO there is a bug here, if the channel can't be set, but is non-nil we will still try to set it
-func (v *describeVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
-	introDescription(value, tags, path)
-
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.chanLengthMin, tags.chanLengthMax))
-
-	chanLen := 1
-
-	//fmt.Fprint(os.Stdout, "chan ", chanLen)
-	if !canSet(value) && value.IsNil() {
-		return chanLen
-	}
-
-	// Create a channel
-	newChan := reflect.MakeChan(value.Type(), chanLen)
-	value.Set(newChan)
-
-	return chanLen
+func (v *describeVisitor) visitChan(value reflect.Value, tags fuzzTags, path []string) {
+	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
+	fmt.Fprintln(os.Stdout, "\tchannels are not supported, will ignore")
 }
 
 func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {

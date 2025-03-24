@@ -124,6 +124,12 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 	return
 }
 
+func (v *fillVisitor) visitComplex(value reflect.Value, tags fuzzTags, path []string) {
+	// Do nothing - complex numbers are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
+	// We can add it, I just don't use them so I didn't bother at first
+}
+
 func (v *fillVisitor) visitArray(value reflect.Value, tags fuzzTags, path []string) {
 	// Do nothing - the array is fixed in size and we do nothing here
 	// Each of it's elements will be visited and we will fill those
@@ -181,22 +187,9 @@ func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTa
 	return mapLen
 }
 
-// TODO there is a bug here, if the channel can't be set, but is non-nil we will still try to set it
-func (v *fillVisitor) visitChan(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
-	//print(leftPad(len(path)))
-	val := int(c.Int64(BytesForNative))
-	chanLen := tags.fitChanLength(val)
-
-	//print("chan ", chanLen)
-	if !canSet(value) && value.IsNil() {
-		return chanLen
-	}
-
-	// Create a channel
-	newChan := reflect.MakeChan(value.Type(), chanLen)
-	value.Set(newChan)
-
-	return chanLen
+func (v *fillVisitor) visitChan(value reflect.Value, tags fuzzTags, path []string) {
+	// Do nothing - channels are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
 }
 
 func leftPad(pad int) string {

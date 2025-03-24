@@ -35,8 +35,6 @@ func TestFill_SimpleTypes(t *testing.T) {
 		SliceValue []uint
 
 		MapValue map[string]float64
-		// Can't do simple comparison of channel
-		//ChannelValue chan float64
 	}
 
 	expected := testStruct{
@@ -157,7 +155,7 @@ func TestFill_Map(t *testing.T) {
 
 	// Set all the fill values here
 	c := NewByteConsumer([]byte{})
-	// Channel is size 1
+	// map is size 1
 	c.pushUint64(1, BytesForNative)
 	// IntValue field
 	c.pushUint64(1, BytesForNative)
@@ -168,25 +166,6 @@ func TestFill_Map(t *testing.T) {
 	Fill(&val, c)
 	assert.Equal(t, 1, len(val.MapValue))
 	assert.Equal(t, 2, val.MapValue[1].IntField)
-}
-
-func TestFill_Channel(t *testing.T) {
-	type testStruct struct {
-		ChanValue chan float64
-	}
-
-	// Set all the fill values here
-	c := NewByteConsumer([]byte{})
-	// Channel is size 1
-	c.pushUint64(1, BytesForNative)
-	// IntValue field
-	c.pushFloat64(3.1415, BytesFor64)
-
-	// Test value
-	val := testStruct{}
-	Fill(&val, c)
-	assert.Equal(t, 1, len(val.ChanValue))
-	assert.Equal(t, 3.1415, <-val.ChanValue)
 }
 
 // Test a series of nested structs.
