@@ -398,3 +398,92 @@ func TestFill_UnsupportedTypes(t *testing.T) {
 	// Assert that none of those fields are set
 	assert.Equal(t, &testStruct{}, val)
 }
+
+// Demonstrate that when the root of the value passed into Fill() is a pointer to a slice
+// Then the slice is appended to until all of the data is used up
+func TestFill_RootSlice(t *testing.T) {
+	type testStruct struct {
+		IntField int
+	}
+
+	{
+		// Create root slice with enough data for one element
+		c := NewByteConsumer([]byte{})
+		c.pushInt64(1, BytesForNative)
+
+		val := &[]testStruct{}
+		Fill(val, c)
+
+		assert.Equal(t, &[]testStruct{
+			testStruct{1},
+		}, val)
+	}
+
+	{
+		// Create root slice with enough data for two elements
+		c := NewByteConsumer([]byte{})
+		c.pushInt64(1, BytesForNative)
+		c.pushInt64(2, BytesForNative)
+
+		val := &[]testStruct{}
+		Fill(val, c)
+
+		assert.Equal(t, &[]testStruct{
+			testStruct{1},
+			testStruct{2},
+		}, val)
+	}
+
+	{
+		// Create root slice with enough data for three elements
+		c := NewByteConsumer([]byte{})
+		c.pushInt64(1, BytesForNative)
+		c.pushInt64(2, BytesForNative)
+		c.pushInt64(3, BytesForNative)
+
+		val := &[]testStruct{}
+		Fill(val, c)
+
+		assert.Equal(t, &[]testStruct{
+			testStruct{1},
+			testStruct{2},
+			testStruct{3},
+		}, val)
+	}
+
+	{
+		// Create root slice with enough data for twelve elements
+		c := NewByteConsumer([]byte{})
+		c.pushInt64(1, BytesForNative)
+		c.pushInt64(2, BytesForNative)
+		c.pushInt64(3, BytesForNative)
+		c.pushInt64(4, BytesForNative)
+		c.pushInt64(5, BytesForNative)
+		c.pushInt64(6, BytesForNative)
+		c.pushInt64(7, BytesForNative)
+		c.pushInt64(8, BytesForNative)
+		c.pushInt64(9, BytesForNative)
+		c.pushInt64(10, BytesForNative)
+		c.pushInt64(11, BytesForNative)
+		c.pushInt64(12, BytesForNative)
+
+		val := &[]testStruct{}
+		Fill(val, c)
+
+		// Assert that none of those fields are set
+		assert.Equal(t, &[]testStruct{
+			testStruct{1},
+			testStruct{2},
+			testStruct{3},
+			testStruct{4},
+			testStruct{5},
+			testStruct{6},
+			testStruct{7},
+			testStruct{8},
+			testStruct{9},
+			testStruct{10},
+			testStruct{11},
+			testStruct{12},
+		}, val)
+	}
+}

@@ -36,9 +36,46 @@ func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, t
 }
 
 func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
-	visitFuncs := visitValue(callback, reflect.ValueOf(root), c, newEmptyFuzzTags(), valuePath{})
+	rootVal := reflect.ValueOf(root)
 
+	path := valuePath{}
+	if isPointerToSlice(rootVal) {
+		visitRootSlice(callback, rootVal, c, path)
+	} else {
+		visitBreadthFirst(callback, rootVal, c, path)
+	}
+
+	//println("")
+}
+
+func isPointerToSlice(value reflect.Value) bool {
+	return value.Kind() == reflect.Pointer && value.Elem().Kind() == reflect.Slice
+}
+
+func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *ByteConsumer, path valuePath) {
+	path.add(pointerVal, "*")
+
+	sliceVal := pointerVal.Elem()
+	sliceType := sliceVal.Type().Elem()
+
+	// Fill up the slice with all the available data
+	for i := 0; c.Len() > 0; i++ {
+		// Create a new element for the slice
+		pathName := fmt.Sprintf("[%d]", i)
+		newVal := reflect.New(sliceType).Elem()
+
+		// Fill in that new element with data
+		visitBreadthFirst(callback, newVal, c, path.add(sliceVal, pathName))
+
+		// Append the new element to the slice
+		sliceVal.Set(reflect.Append(sliceVal, newVal))
+	}
+}
+
+func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *ByteConsumer, path valuePath) {
 	values := newDequeue[visitFunc]()
+
+	visitFuncs := visitValue(callback, value, c, newEmptyFuzzTags(), path)
 	values.addMany(visitFuncs)
 
 	for values.len() != 0 {
@@ -46,8 +83,6 @@ func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
 		visitFuncs := ff()
 		values.addMany(visitFuncs)
 	}
-
-	//println("")
 }
 
 func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) []visitFunc {
