@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"regexp"
-	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -17,49 +15,6 @@ type describeVisitor struct {
 
 func Describe(root any) {
 	visitRoot(&describeVisitor{}, root, NewByteConsumer([]byte{1, 2, 3}))
-}
-
-var pointerRegex = regexp.MustCompile(`\.(\**)\(`)
-
-func pathString(value reflect.Value, path []string) string {
-	pStr := strings.Join(path, ".")
-	pStr = strings.ReplaceAll(pStr, "*.", "*")
-	pStr = strings.ReplaceAll(pStr, ".[", "[")
-	pStr = strings.ReplaceAll(pStr, ".(", "(")
-	// This complex regex replace pulls leading pointer '*' inside the (typeName) parenthesis
-	// This all feels a bit convoluted - will think about it a bit more
-	pStr = pointerRegex.ReplaceAllString(pStr, "($1")
-
-	if len(pStr) > 0 {
-		pStr += " "
-	}
-
-	pStr = pStr + "(" + typeString(value.Type()) + ")"
-
-	return pStr
-}
-
-func typeString(typ reflect.Type) string {
-	switch typ.Kind() {
-	case reflect.Pointer:
-		return "*" + typeString(typ.Elem())
-	case reflect.Slice:
-		return "[]" + typeString(typ.Elem())
-	case reflect.Map:
-		return fmt.Sprintf("map[%s]%s", typeString(typ.Key()), typeString(typ.Elem()))
-	case reflect.Func:
-		// We don't bother to capture the actual function signature
-		return "func"
-	case reflect.Chan:
-		return "chan " + typeString(typ.Elem())
-	case reflect.UnsafePointer:
-		return "unsafe.Pointer"
-	case reflect.Interface:
-		// We don't bother to capture the actual interface type
-		return "interface"
-	default:
-		return typ.Name()
-	}
 }
 
 func shortenString(s string) string {
@@ -87,8 +42,8 @@ func isExported(name string) bool {
 	return unicode.IsUpper(firstRune)
 }
 
-func introDescription(value reflect.Value, tags fuzzTags, path []string) {
-	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
+func introDescription(value reflect.Value, tags fuzzTags, path valuePath) {
+	fmt.Fprintf(os.Stdout, "%s\n", path.pathString(value))
 
 	// Value is settable
 	if value.CanSet() {
@@ -107,12 +62,12 @@ func introDescription(value reflect.Value, tags fuzzTags, path []string) {
 	fmt.Fprintf(os.Stdout, "\tcan't set\n")
 }
 
-func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 	return
 }
 
-func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -131,7 +86,7 @@ func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fu
 
 }
 
-func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -149,11 +104,11 @@ func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags f
 	return
 }
 
-func (v *describeVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -171,16 +126,16 @@ func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags 
 	return
 }
 
-func (v *describeVisitor) visitComplex(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitComplex(value reflect.Value, tags fuzzTags, path valuePath) {
 	// if this upsets you we can probably add it
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 }
 
-func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	//introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -194,7 +149,7 @@ func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tag
 	value.Set(newVal)
 }
 
-func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
+func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
 	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.sliceLengthMin, tags.sliceLengthMax))
@@ -212,7 +167,7 @@ func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags 
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
-func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
+func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
 	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.mapLengthMin, tags.mapLengthMax))
@@ -230,19 +185,19 @@ func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fu
 	return mapLen
 }
 
-func (v *describeVisitor) visitChan(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitChan(value reflect.Value, tags fuzzTags, path valuePath) {
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitFunc(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitFunc(value reflect.Value, tags fuzzTags, path valuePath) {
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitInterface(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitInterface(value reflect.Value, tags fuzzTags, path valuePath) {
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -260,7 +215,7 @@ func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags
 	return
 }
 
-func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) {
 	if !value.CanSet() {
 		// We only describe a struct if we can't set it
 		// If it can be set then it will be described via its fields
@@ -268,11 +223,11 @@ func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path [
 	}
 }
 
-func (v *describeVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path []string) {
+func (v *describeVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path valuePath) {
 	notSupported(value, path)
 }
 
-func notSupported(value reflect.Value, path []string) {
-	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
+func notSupported(value reflect.Value, path valuePath) {
+	fmt.Fprintf(os.Stdout, "%s\n", path.pathString(value))
 	fmt.Fprintln(os.Stdout, "\tnot supported, will ignore")
 }

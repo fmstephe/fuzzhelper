@@ -14,7 +14,7 @@ func Fill(root any, c *ByteConsumer) {
 	visitRoot(&fillVisitor{}, root, c)
 }
 
-func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags, path []string) {
+func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//print("bool")
 	if !value.CanSet() {
@@ -25,7 +25,7 @@ func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags
 	value.SetBool(val)
 }
 
-func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//print("int")
 	if !value.CanSet() {
@@ -46,7 +46,7 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTa
 	value.SetInt(fittedVal)
 }
 
-func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//print("uint")
 	if !value.CanSet() {
@@ -67,13 +67,13 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 	value.SetUint(fittedVal)
 }
 
-func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//println("uintptr: ignored")
 	return
 }
 
-func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//print("float")
 	if !value.CanSet() {
@@ -93,18 +93,18 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 	value.SetFloat(fittedVal)
 }
 
-func (v *fillVisitor) visitComplex(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitComplex(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - complex numbers are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
 	// We can add it, I just don't use them so I didn't bother at first
 }
 
-func (v *fillVisitor) visitArray(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitArray(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - the array is fixed in size and we do nothing here
 	// Each of it's elements will be visited and we will fill those
 }
 
-func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags, path []string) {
+func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//print("pointer")
 	if !value.CanSet() {
@@ -118,7 +118,7 @@ func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzT
 	value.Set(newVal)
 }
 
-func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
+func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	//print(leftPad(len(path)))
 	val := int(c.Int64(BytesForNative))
 	sliceLen := tags.fitSliceLengthVal(val)
@@ -135,7 +135,7 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
-func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) int {
+func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	//print(leftPad(len(path)))
 	val := int(c.Int64(BytesForNative))
 	mapLen := tags.fitMapLength(val)
@@ -152,17 +152,17 @@ func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTa
 	return mapLen
 }
 
-func (v *fillVisitor) visitChan(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitChan(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - channels are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
 }
 
-func (v *fillVisitor) visitFunc(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitFunc(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - functions are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
 }
 
-func (v *fillVisitor) visitInterface(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitInterface(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - interfaces are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
 }
@@ -171,7 +171,7 @@ func leftPad(pad int) string {
 	return strings.Repeat(" ", pad)
 }
 
-func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	if !value.CanSet() {
 		return
 	}
@@ -192,12 +192,12 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 	value.SetString(val)
 }
 
-func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - the struct is fixed in size and we do nothing here
 	// Each of it's fields will be visited and we will fill those
 }
 
-func (v *fillVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path []string) {
+func (v *fillVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - unsafe pointers are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
 }

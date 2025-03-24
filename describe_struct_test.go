@@ -170,6 +170,23 @@ func ExampleDescribe_SliceRange() {
 	//	range min: 0.2 max: 0.7
 }
 
+func ExampleDescribe_Array() {
+	type testStruct struct {
+		ArrayField [4]uint64 `fuzz-uint-range:"6,100"`
+	}
+
+	Describe(&testStruct{})
+	// Output:*(testStruct).ArrayField ([4]uint64)
+	//*(testStruct).ArrayField[0] (uint64)
+	//	range min: 6 max: 100
+	//*(testStruct).ArrayField[1] (uint64)
+	//	range min: 6 max: 100
+	//*(testStruct).ArrayField[2] (uint64)
+	//	range min: 6 max: 100
+	//*(testStruct).ArrayField[3] (uint64)
+	//	range min: 6 max: 100
+}
+
 func ExampleDescribe_MapRange() {
 	type testStruct struct {
 		MapField map[int64]float64 `fuzz-map-range:"3,20" fuzz-float-range:"0.2,0.7" fuzz-int-range:"5,10"`

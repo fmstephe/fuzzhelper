@@ -8,25 +8,25 @@ import (
 type visitFunc func() []visitFunc
 
 type valueVisitor interface {
-	visitBool(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitInt(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitUint(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitFloat(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitComplex(reflect.Value, fuzzTags, []string)
-	visitArray(reflect.Value, fuzzTags, []string)
-	visitChan(reflect.Value, fuzzTags, []string)
-	visitFunc(reflect.Value, fuzzTags, []string)
-	visitInterface(reflect.Value, fuzzTags, []string)
-	visitMap(reflect.Value, *ByteConsumer, fuzzTags, []string) int
-	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, []string) int
-	visitString(reflect.Value, *ByteConsumer, fuzzTags, []string)
-	visitStruct(reflect.Value, fuzzTags, []string)
-	visitUnsafePointer(reflect.Value, fuzzTags, []string)
+	visitBool(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitInt(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitUint(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitFloat(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitComplex(reflect.Value, fuzzTags, valuePath)
+	visitArray(reflect.Value, fuzzTags, valuePath)
+	visitChan(reflect.Value, fuzzTags, valuePath)
+	visitFunc(reflect.Value, fuzzTags, valuePath)
+	visitInterface(reflect.Value, fuzzTags, valuePath)
+	visitMap(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
+	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
+	visitString(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitStruct(reflect.Value, fuzzTags, valuePath)
+	visitUnsafePointer(reflect.Value, fuzzTags, valuePath)
 }
 
-func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) visitFunc {
+func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) visitFunc {
 	return func() []visitFunc {
 		//println(fmt.Sprintf("before %#v\n", value.Interface()))
 		ffs := visitValue(callback, value, c, tags, path)
@@ -36,7 +36,7 @@ func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, t
 }
 
 func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
-	visitFuncs := visitValue(callback, reflect.ValueOf(root), c, newEmptyFuzzTags(), []string{})
+	visitFuncs := visitValue(callback, reflect.ValueOf(root), c, newEmptyFuzzTags(), valuePath{})
 
 	values := newDequeue[visitFunc]()
 	values.addMany(visitFuncs)
@@ -50,7 +50,7 @@ func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
 	//println("")
 }
 
-func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) []visitFunc {
+func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) []visitFunc {
 	if c.Len() == 0 {
 		// There are no more bytes to use to visit data
 		return []visitFunc{}
@@ -86,7 +86,8 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 
 		newValues := []visitFunc{}
 		for i := 0; i < value.Len(); i++ {
-			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, append(path, "[value]"))...)
+			pathVal := fmt.Sprintf("[%d]", i)
+			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, path.add(value, pathVal))...)
 		}
 		return newValues
 
@@ -116,14 +117,14 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 			mapKey := mapKeyP.Elem()
 			// Note here that the tags used to create this map are also
 			// used to create the key
-			newValues = append(newValues, visitValue(callback, mapKey, c, tags, append(path, "[key]"))...)
+			newValues = append(newValues, visitValue(callback, mapKey, c, tags, path.add(value, "[key]"))...)
 
 			// Create the value
 			mapValP := reflect.New(valType)
 			mapVal := mapValP.Elem()
 			// Note here that the tags used to create this map are also
 			// used to create the value
-			newValues = append(newValues, visitValue(callback, mapVal, c, tags, append(path, "[value]"))...)
+			newValues = append(newValues, visitValue(callback, mapVal, c, tags, path.add(value, "[value]"))...)
 
 			// Add key/val to map
 			//println("setting map element")
@@ -135,7 +136,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 	case reflect.Pointer:
 		callback.visitPointer(value, c, tags, path)
 		return []visitFunc{
-			newVisitFunc(callback, value.Elem(), c, newEmptyFuzzTags(), append(path, "*")),
+			newVisitFunc(callback, value.Elem(), c, newEmptyFuzzTags(), path.add(value, "*")),
 		}
 
 	case reflect.Slice:
@@ -144,7 +145,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		newValues := []visitFunc{}
 		for i := range sliceLen {
 			pathVal := fmt.Sprintf("[%d]", i)
-			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, append(path, pathVal))...)
+			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, path.add(value, pathVal))...)
 		}
 		return newValues
 
@@ -161,17 +162,17 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 
 		newValues := []visitFunc{}
 		vType := value.Type()
-		path = append(path, "("+vType.Name()+")")
+		path = path.add(value, "("+vType.Name()+")")
 		for i := 0; i < vType.NumField(); i++ {
 			vField := value.Field(i)
 			tField := vType.Field(i)
 			tags := newFuzzTags(value, tField)
 			if vField.CanSet() {
-				newValues = append(newValues, visitValue(callback, vField, c, tags, append(path, tField.Name))...)
+				newValues = append(newValues, visitValue(callback, vField, c, tags, path.add(value, tField.Name))...)
 			} else {
 				// We visit this unsettable field so we can describe it
 				// It should not be filled and any returned fill functions are ignored
-				visitValue(callback, vField, c, tags, append(path, tField.Name))
+				visitValue(callback, vField, c, tags, path.add(value, tField.Name))
 			}
 		}
 
