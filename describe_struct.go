@@ -215,12 +215,22 @@ func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags
 	return
 }
 
-func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) {
-	if !value.CanSet() {
-		// We only describe a struct if we can't set it
+func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) bool {
+	recursion := path.containsType(value.Type())
+
+	if !value.CanSet() || recursion {
+		// We only describe a struct if we can't set it, or if it is recursive
 		// If it can be set then it will be described via its fields
 		introDescription(value, tags, path)
 	}
+
+	if recursion {
+		fmt.Fprintf(os.Stdout, "\tRecursion...\n")
+	}
+
+	// If we've already visited (and described) a struct
+	// we don't want to visit it again - so we return false
+	return !recursion
 }
 
 func (v *describeVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path valuePath) {

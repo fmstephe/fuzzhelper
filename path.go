@@ -36,7 +36,20 @@ func (p valuePath) containsType(typ reflect.Type) bool {
 var pointerRegex = regexp.MustCompile(`\.(\**)\(`)
 
 func (p valuePath) pathString(value reflect.Value) string {
-	pStr := strings.Join(p.names, ".")
+	// If our current value is preceeded by any number of pointers, we
+	// include those pointers into the value's type description for
+	// readibility
+	names := p.names
+	for i := len(p.values) - 1; i >= 0; i-- {
+		if p.values[i].Kind() == reflect.Pointer {
+			value = p.values[i]
+			names = names[:i]
+		} else {
+			break
+		}
+	}
+
+	pStr := strings.Join(names, ".")
 	pStr = strings.ReplaceAll(pStr, "*.", "*")
 	pStr = strings.ReplaceAll(pStr, ".[", "[")
 	pStr = strings.ReplaceAll(pStr, ".(", "(")

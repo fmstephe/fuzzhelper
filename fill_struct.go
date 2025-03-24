@@ -192,9 +192,10 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 	value.SetString(val)
 }
 
-func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) {
+func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) bool {
 	// Do nothing - the struct is fixed in size and we do nothing here
 	// Each of it's fields will be visited and we will fill those
+	return true
 }
 
 func (v *fillVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path valuePath) {

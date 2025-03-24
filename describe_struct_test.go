@@ -268,3 +268,22 @@ func ExampleDescribe_UnsupportedTypes() {
 	//*(testStruct).UnsafePointerField (unsafe.Pointer)
 	//	not supported, will ignore
 }
+
+func ExampleDescribe_RecursiveType() {
+	type testStruct struct {
+		IntField        int64
+		RecursiveField1 **testStruct
+		RecursiveField2 *testStruct
+		StringField     string
+	}
+
+	Describe(&testStruct{})
+	// Output:*(testStruct).IntField (int64)
+	//	range min: 0 max: 0
+	//*(testStruct).StringField (string)
+	//	range min: 0 max: 20
+	//*(testStruct).RecursiveField2 (*testStruct)
+	//	Recursion...
+	//*(testStruct).RecursiveField1 (**testStruct)
+	//	Recursion...
+}

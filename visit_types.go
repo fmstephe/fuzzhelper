@@ -22,7 +22,7 @@ type valueVisitor interface {
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
 	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
 	visitString(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitStruct(reflect.Value, fuzzTags, valuePath)
+	visitStruct(reflect.Value, fuzzTags, valuePath) bool
 	visitUnsafePointer(reflect.Value, fuzzTags, valuePath)
 }
 
@@ -154,7 +154,13 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Struct:
-		callback.visitStruct(value, tags, path)
+		if !callback.visitStruct(value, tags, path) {
+			// We allow the visitor to elect not to process a struct.
+			// This was introduced to allow the Describe() function
+			// to avoid infinite recursion
+			return []visitFunc{}
+		}
+
 		if !value.CanSet() {
 			// Can't set struct - ignore the struct and ignore its fields
 			return []visitFunc{}
