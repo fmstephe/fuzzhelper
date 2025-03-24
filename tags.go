@@ -15,14 +15,11 @@ type fuzzTags struct {
 	// taken from
 	fieldName string
 	//
-	intMax int64
-	intMin int64
+	intRange intTagRange
 	//
-	uintMax uint64
-	uintMin uint64
+	uintRange uintTagRange
 	//
-	floatMax float64
-	floatMin float64
+	floatRange floatTagRange
 	//
 	sliceLengthMin uint64
 	sliceLengthMax uint64
@@ -51,20 +48,9 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 
 	t.fieldName = field.Name
 
-	if intMin, intMax, ok := getInt64MinMax(field, "fuzz-int-range"); ok {
-		t.intMin = intMin
-		t.intMax = intMax
-	}
-
-	if uintMin, uintMax, ok := getUint64MinMax(field, "fuzz-uint-range"); ok {
-		t.uintMin = uintMin
-		t.uintMax = uintMax
-	}
-
-	if floatMin, floatMax, ok := getFloat64MinMax(field, "fuzz-float-range"); ok {
-		t.floatMin = floatMin
-		t.floatMax = floatMax
-	}
+	t.intRange = newIntTagRange(field, "fuzz-int-range")
+	t.uintRange = newUintTagRange(field, "fuzz-uint-range")
+	t.floatRange = newFloatTagRange(field, "fuzz-float-range")
 
 	if sliceLengthMin, sliceLengthMax, ok := getUint64MinMax(field, "fuzz-slice-range"); ok {
 		t.sliceLengthMin = sliceLengthMin
@@ -117,14 +103,6 @@ func newEmptyFuzzTags() fuzzTags {
 	return fuzzTags{}
 }
 
-func (t *fuzzTags) fitIntVal(val int64) int64 {
-	return fitIntValInternal(t.intMin, t.intMax, val)
-}
-
-func (t *fuzzTags) fitUintVal(val uint64) uint64 {
-	return fitUintValInternal(t.uintMin, t.uintMax, val)
-}
-
 func (t *fuzzTags) fitSliceLengthVal(val int) int {
 	return fitLengthVal(t.sliceLengthMin, t.sliceLengthMax, val)
 }
@@ -135,10 +113,6 @@ func (t *fuzzTags) fitStringLength(val int) int {
 
 func (t *fuzzTags) fitMapLength(val int) int {
 	return fitLengthVal(t.mapLengthMin, t.mapLengthMax, val)
-}
-
-func (t *fuzzTags) fitFloatVal(val float64) float64 {
-	return fitFloatValInternal(t.floatMin, t.floatMax, val)
 }
 
 func fitLengthVal(lengthMin, lengthMax uint64, val int) int {
@@ -225,18 +199,6 @@ func fitFloatValInternal(floatMin, floatMax, val float64) float64 {
 	//println("float val fitted", val, floatMin, floatMax, fitted)
 
 	return fitted
-}
-
-func absInt(val int64) int64 {
-	if val == math.MinInt64 {
-		// taking -math.MinInt64 produces math.MinInt64
-		// So we need to special case this value
-		return math.MaxInt64
-	}
-	if val < 0 {
-		return -val
-	}
-	return val
 }
 
 func getFloat64MinMax(field reflect.StructField, tag string) (minVal, maxVal float64, found bool) {

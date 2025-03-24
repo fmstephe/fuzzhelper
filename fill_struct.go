@@ -42,7 +42,7 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTa
 	}
 
 	val := c.Int64(value.Type().Size())
-	fittedVal := tags.fitIntVal(val)
+	fittedVal := tags.intRange.fit(val)
 	value.SetInt(fittedVal)
 }
 
@@ -63,7 +63,7 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 	}
 
 	val := c.Uint64(value.Type().Size())
-	fittedVal := tags.fitUintVal(val)
+	fittedVal := tags.uintRange.fit(val)
 	value.SetUint(fittedVal)
 }
 
@@ -89,7 +89,7 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 	}
 
 	val := c.Float64(value.Type().Size())
-	fittedVal := tags.fitFloatVal(val)
+	fittedVal := tags.floatRange.fit(val)
 	value.SetFloat(fittedVal)
 }
 

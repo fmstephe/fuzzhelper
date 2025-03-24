@@ -81,7 +81,7 @@ func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fu
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.intMin, tags.intMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.intRange.intMin, tags.intRange.intMax))
 	return
 
 }
@@ -100,7 +100,7 @@ func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags f
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.uintMin, tags.uintMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.uintRange.uintMin, tags.uintRange.uintMax))
 	return
 }
 
@@ -122,7 +122,7 @@ func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags 
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %g max: %g", tags.floatMin, tags.floatMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %g max: %g", tags.floatRange.floatMin, tags.floatRange.floatMax))
 	return
 }
 
