@@ -350,7 +350,3 @@ func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag 
 		value:      result[0].Interface().(T),
 	}
 }
-
-func getValue[T any](t *valueTag[T]) (T, bool) {
-	return t.value, t.wasSet
-}

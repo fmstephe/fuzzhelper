@@ -7,11 +7,6 @@ import (
 	"strings"
 )
 
-type valueStep struct {
-	value reflect.Value
-	name  string
-}
-
 type valuePath struct {
 	values []reflect.Value
 	names  []string

@@ -2,7 +2,6 @@ package fuzzhelper
 
 import (
 	"reflect"
-	"strings"
 )
 
 var _ valueVisitor = &fillVisitor{}
@@ -74,7 +73,6 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//println("uintptr: ignored")
-	return
 }
 
 func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
@@ -169,10 +167,6 @@ func (v *fillVisitor) visitFunc(value reflect.Value, tags fuzzTags, path valuePa
 func (v *fillVisitor) visitInterface(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - interfaces are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
-}
-
-func leftPad(pad int) string {
-	return strings.Repeat(" ", pad)
 }
 
 func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {

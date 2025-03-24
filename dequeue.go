@@ -10,10 +10,6 @@ func newDequeue[T any]() *dequeue[T] {
 	}
 }
 
-func (d *dequeue[T]) add(newValue T) {
-	d.values = append(d.values, newValue)
-}
-
 func (d *dequeue[T]) addMany(newValues []T) {
 	d.values = append(d.values, newValues...)
 }
@@ -24,6 +20,7 @@ func (d *dequeue[T]) popFirst() T {
 	return value
 }
 
+//lint:ignore U1000 This method is not used right now, but if we change the search strategy in visit_types it may be used
 func (d *dequeue[T]) popLast() T {
 	value := d.values[len(d.values)-1]
 	d.values = d.values[:len(d.values)-1]
