@@ -8,6 +8,7 @@ import (
 type visitFunc func() []visitFunc
 
 type valueVisitor interface {
+	canGrowRootSlice() bool
 	visitBool(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
 	visitInt(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
 	visitUint(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
@@ -53,7 +54,7 @@ func isPointerToSlice(value reflect.Value) bool {
 }
 
 func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *ByteConsumer, path valuePath) {
-	path.add(pointerVal, "*")
+	path = path.add(pointerVal, "*")
 
 	sliceVal := pointerVal.Elem()
 	sliceType := sliceVal.Type().Elem()
@@ -69,6 +70,13 @@ func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *ByteCons
 
 		// Append the new element to the slice
 		sliceVal.Set(reflect.Append(sliceVal, newVal))
+
+		if !callback.canGrowRootSlice() {
+			// If we don't make this check then the describer will
+			// be unable to stop this slice from growing
+			// indefinitely
+			break
+		}
 	}
 }
 

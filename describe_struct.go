@@ -62,6 +62,10 @@ func introDescription(value reflect.Value, tags fuzzTags, path valuePath) {
 	fmt.Fprintf(os.Stdout, "\tcan't set\n")
 }
 
+func (v *describeVisitor) canGrowRootSlice() bool {
+	return false
+}
+
 func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 	return

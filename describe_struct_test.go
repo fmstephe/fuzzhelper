@@ -287,3 +287,13 @@ func ExampleDescribe_RecursiveType() {
 	//*(testStruct).RecursiveField1 (**testStruct)
 	//	Recursion...
 }
+
+func ExampleDescribe_RootSlice() {
+	type testStruct struct {
+		IntField int64
+	}
+
+	Describe(&[]testStruct{})
+	// Output:*[0](testStruct).IntField (int64)
+	//	range min: 0 max: 0
+}
