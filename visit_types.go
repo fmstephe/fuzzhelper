@@ -16,11 +16,14 @@ type valueVisitor interface {
 	visitComplex(reflect.Value, fuzzTags, []string)
 	visitArray(reflect.Value, fuzzTags, []string)
 	visitChan(reflect.Value, fuzzTags, []string)
+	visitFunc(reflect.Value, fuzzTags, []string)
+	visitInterface(reflect.Value, fuzzTags, []string)
 	visitMap(reflect.Value, *ByteConsumer, fuzzTags, []string) int
 	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, []string)
 	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, []string) int
 	visitString(reflect.Value, *ByteConsumer, fuzzTags, []string)
 	visitStruct(reflect.Value, fuzzTags, []string)
+	visitUnsafePointer(reflect.Value, fuzzTags, []string)
 }
 
 func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) visitFunc {
@@ -75,16 +78,11 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Complex64, reflect.Complex128:
-		// Complex values are ignored Only because I don't use them,
-		// and I suspect no one else uses them very often. Can be added
-		// in if a need is felt
-		//return callback.visitComplex(value, c, tags)
+		callback.visitComplex(value, tags, path)
 		return []visitFunc{}
 
 	case reflect.Array:
-		//print("array")
 		callback.visitArray(value, tags, path)
-		canSet(value)
 
 		newValues := []visitFunc{}
 		for i := 0; i < value.Len(); i++ {
@@ -97,13 +95,11 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Func:
-		// Ignored
-		//return callback.visitFunc(value, c, tags)
+		callback.visitFunc(value, tags, path)
 		return []visitFunc{}
 
 	case reflect.Interface:
-		// Ignored
-		//return callback.visitInterface(value, c, tags)
+		callback.visitInterface(value, tags, path)
 		return []visitFunc{}
 
 	case reflect.Map:
@@ -157,8 +153,6 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Struct:
-		//print("struct ", value.Type().Name())
-		canSet(value)
 		callback.visitStruct(value, tags, path)
 		if !value.CanSet() {
 			// Can't set struct - ignore the struct and ignore its fields
@@ -184,8 +178,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return newValues
 
 	case reflect.UnsafePointer:
-		// Ignored
-		//return callback.visitUnsafePointer(value, c, tags)
+		callback.visitUnsafePointer(value, tags, path)
 		return []visitFunc{}
 
 	default:

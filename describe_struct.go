@@ -47,6 +47,16 @@ func typeString(typ reflect.Type) string {
 		return "[]" + typeString(typ.Elem())
 	case reflect.Map:
 		return fmt.Sprintf("map[%s]%s", typeString(typ.Key()), typeString(typ.Elem()))
+	case reflect.Func:
+		// We don't bother to capture the actual function signature
+		return "func"
+	case reflect.Chan:
+		return "chan " + typeString(typ.Elem())
+	case reflect.UnsafePointer:
+		return "unsafe.Pointer"
+	case reflect.Interface:
+		// We don't bother to capture the actual interface type
+		return "interface"
 	default:
 		return typ.Name()
 	}
@@ -140,9 +150,7 @@ func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags f
 }
 
 func (v *describeVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
-	introDescription(value, tags, path)
-	// Ignored
-	return
+	notSupported(value, path)
 }
 
 func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
@@ -164,8 +172,8 @@ func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags 
 }
 
 func (v *describeVisitor) visitComplex(value reflect.Value, tags fuzzTags, path []string) {
-	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
-	fmt.Fprintln(os.Stdout, "\tComplex numbers are not supported, will ignore (if this upsets you we can probably add it)")
+	// if this upsets you we can probably add it
+	notSupported(value, path)
 }
 
 func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path []string) {
@@ -175,7 +183,7 @@ func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path []
 func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
 	//introDescription(value, tags, path)
 
-	if !canSet(value) {
+	if !value.CanSet() {
 		return
 	}
 
@@ -193,15 +201,12 @@ func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags 
 
 	sliceLen := 1
 
-	//fmt.Fprint(os.Stdout, "slice ", sliceLen)
-	if !canSet(value) && value.IsNil() {
+	if !value.CanSet() {
 		return 0
 	}
 
-	if value.IsNil() {
-		newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
-		value.Set(newSlice)
-	}
+	newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
+	value.Set(newSlice)
 
 	return sliceLen
 }
@@ -214,8 +219,7 @@ func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fu
 
 	mapLen := 1
 
-	//fmt.Fprint(os.Stdout, "map ", mapLen)
-	if !canSet(value) && value.IsNil() {
+	if !value.CanSet() {
 		return 0
 	}
 
@@ -227,8 +231,15 @@ func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fu
 }
 
 func (v *describeVisitor) visitChan(value reflect.Value, tags fuzzTags, path []string) {
-	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
-	fmt.Fprintln(os.Stdout, "\tchannels are not supported, will ignore")
+	notSupported(value, path)
+}
+
+func (v *describeVisitor) visitFunc(value reflect.Value, tags fuzzTags, path []string) {
+	notSupported(value, path)
+}
+
+func (v *describeVisitor) visitInterface(value reflect.Value, tags fuzzTags, path []string) {
+	notSupported(value, path)
 }
 
 func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path []string) {
@@ -255,4 +266,13 @@ func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path [
 		// If it can be set then it will be described via its fields
 		introDescription(value, tags, path)
 	}
+}
+
+func (v *describeVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path []string) {
+	notSupported(value, path)
+}
+
+func notSupported(value reflect.Value, path []string) {
+	fmt.Fprintf(os.Stdout, "%s\n", pathString(value, path))
+	fmt.Fprintln(os.Stdout, "\tnot supported, will ignore")
 }

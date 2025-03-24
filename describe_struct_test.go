@@ -1,5 +1,7 @@
 package fuzzhelper
 
+import "unsafe"
+
 func ExampleDescribe_StringRange() {
 	type testStruct struct {
 		StringField string `fuzz-string-range:"1,5"`
@@ -223,4 +225,29 @@ func ExampleDescribe_StructInStruct() {
 	//*(parentStruct).PointerPointerChild(**childStruct).BoolField (bool)
 	//*(parentStruct).PointerPointerChild(**childStruct).StringField (string)
 	//	range min: 0 max: 20
+}
+
+func ExampleDescribe_UnsupportedTypes() {
+	type testStruct struct {
+		ChanField          chan int
+		InterfaceField     any
+		ComplexField       complex128
+		FuncField          func()
+		UintptrField       uintptr
+		UnsafePointerField unsafe.Pointer
+	}
+
+	Describe(&testStruct{})
+	// Output:*(testStruct).ChanField (chan int)
+	//	not supported, will ignore
+	//*(testStruct).InterfaceField (interface)
+	//	not supported, will ignore
+	//*(testStruct).ComplexField (complex128)
+	//	not supported, will ignore
+	//*(testStruct).FuncField (func)
+	//	not supported, will ignore
+	//*(testStruct).UintptrField (uintptr)
+	//	not supported, will ignore
+	//*(testStruct).UnsafePointerField (unsafe.Pointer)
+	//	not supported, will ignore
 }
