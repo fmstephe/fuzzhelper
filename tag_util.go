@@ -231,3 +231,81 @@ func (r *floatTagRange) fit(val float64) float64 {
 
 	return fitted
 }
+
+type valueTag[T any] struct {
+	wasSet     bool
+	methodName string
+	value      T
+}
+
+func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag string) valueTag[T] {
+
+	methodName, ok := field.Tag.Lookup(tag)
+	if !ok {
+		//println("no tag found: ", tag, field.Name)
+		return valueTag[T]{
+			wasSet:     false,
+			methodName: methodName,
+		}
+	}
+
+	if !isExported(methodName) {
+		//println("method is not exported, can't be called: ", methodName, field.Name, structVal.Type().String())
+		return valueTag[T]{
+			wasSet:     false,
+			methodName: methodName,
+		}
+	}
+	// Try to get the method from the struct
+	// We look for pointer receiver method first, then value receivers
+	// We it in this order under the assumption that people usually use pointer receivers
+	method := structVal.Addr().MethodByName(methodName)
+	if !method.IsValid() {
+		method = structVal.MethodByName(methodName)
+		if !method.IsValid() {
+			//println("no method found: ", methodName, field.Name, structVal.Type().String())
+			return valueTag[T]{
+				wasSet:     false,
+				methodName: methodName,
+			}
+		}
+	}
+
+	methodType := method.Type()
+	if methodType.NumIn() != 0 {
+		//println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
+		return valueTag[T]{
+			wasSet:     false,
+			methodName: methodName,
+		}
+	}
+
+	if methodType.NumOut() != 1 {
+		//println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
+		return valueTag[T]{
+			wasSet:     false,
+			methodName: methodName,
+		}
+	}
+
+	returnType := methodType.Out(0)
+	if returnType != reflect.TypeFor[T]() {
+		//println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
+		return valueTag[T]{
+			wasSet:     false,
+			methodName: methodName,
+		}
+	}
+
+	result := method.Call([]reflect.Value{})
+
+	return valueTag[T]{
+		wasSet:     true,
+		methodName: methodName,
+		value:      result[0].Interface().(T),
+	}
+}
+
+func getValue[T any](t *valueTag[T]) (T, bool) {
+	return t.value, t.wasSet
+}

@@ -76,8 +76,8 @@ func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fu
 	}
 
 	// First check if there is a list of valid string values
-	if len(tags.intValues) != 0 {
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.intValuesMethod, methodValuesString(tags.intValues)))
+	if tags.intValues.wasSet {
+		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.intValues.methodName, methodValuesString(tags.intValues.value)))
 		return
 	}
 
@@ -95,8 +95,8 @@ func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags f
 	}
 
 	// First check if there is a list of valid uint values
-	if len(tags.uintValues) != 0 {
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.uintValuesMethod, methodValuesString(tags.uintValues)))
+	if tags.uintValues.wasSet {
+		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.uintValues.methodName, methodValuesString(tags.uintValues.value)))
 		return
 	}
 
@@ -117,8 +117,8 @@ func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags 
 	}
 
 	// First check if there is a list of valid float values
-	if len(tags.floatValues) != 0 {
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.floatValuesMethod, methodValuesString(tags.floatValues)))
+	if tags.floatValues.wasSet {
+		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.floatValues.methodName, methodValuesString(tags.floatValues.value)))
 		return
 	}
 
@@ -206,8 +206,8 @@ func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags
 	}
 
 	// First check if there is a list of valid string values
-	if len(tags.stringValues) != 0 {
-		fmt.Fprintf(os.Stdout, "\tmethod (%s): %s\n", tags.stringValuesMethod, methodValuesString(tags.stringValues))
+	if tags.stringValues.wasSet {
+		fmt.Fprintf(os.Stdout, "\tmethod (%s): %s\n", tags.stringValues.methodName, methodValuesString(tags.stringValues.value))
 		return
 	}
 

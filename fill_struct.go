@@ -33,9 +33,9 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTa
 	}
 
 	// First check there is a list of valid int values
-	if len(tags.intValues) != 0 {
+	if tags.intValues.wasSet {
 		val := c.Uint64(BytesForNative)
-		intVal := tags.intValues[val%uint64(len(tags.intValues))]
+		intVal := tags.intValues.value[val%uint64(len(tags.intValues.value))]
 
 		value.SetInt(intVal)
 		return
@@ -54,9 +54,9 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzT
 	}
 
 	// First check there is a list of valid uint values
-	if len(tags.uintValues) != 0 {
+	if tags.uintValues.wasSet {
 		val := c.Uint64(BytesForNative)
-		uintVal := tags.uintValues[val%uint64(len(tags.uintValues))]
+		uintVal := tags.uintValues.value[val%uint64(len(tags.uintValues.value))]
 
 		value.SetUint(uintVal)
 		return
@@ -81,9 +81,9 @@ func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzz
 	}
 
 	// First check there is a list of valid uint values
-	if len(tags.floatValues) != 0 {
+	if tags.floatValues.wasSet {
 		val := c.Uint64(BytesForNative)
-		floatVal := tags.floatValues[val%uint64(len(tags.floatValues))]
+		floatVal := tags.floatValues.value[val%uint64(len(tags.floatValues.value))]
 		value.SetFloat(floatVal)
 		return
 	}
@@ -177,9 +177,9 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 	}
 
 	// First check if there is a list of valid string values
-	if len(tags.stringValues) != 0 {
+	if tags.stringValues.wasSet {
 		val := c.Uint64(BytesForNative)
-		str := tags.stringValues[val%uint64(len(tags.stringValues))]
+		str := tags.stringValues.value[val%uint64(len(tags.stringValues.value))]
 
 		value.SetString(str)
 		return
