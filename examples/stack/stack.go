@@ -3,7 +3,7 @@ package stack
 import "fmt"
 
 type Stack struct {
-	top  int16 // This will cause bugs on overflow
+	top  int8 // This will cause bugs on overflow
 	data []any
 }
 

@@ -17,7 +17,6 @@ const (
 type StackFuzzStep struct {
 	Operation string `fuzz-string-method:"AllOperations"`
 	PushValue string `fuzz-string-range:"1,10"`
-	nextStep  *StackFuzzStep
 }
 
 // List of operations which we allow to execute at each step
@@ -32,9 +31,9 @@ func (s StackFuzzStep) AllOperations() []string {
 func FuzzStack(f *testing.F) {
 	f.Fuzz(func(t *testing.T, bytes []byte) {
 		stack := New()
-		step := &StackFuzzStep{}
+		steps := &[]StackFuzzStep{}
 		c := fuzzhelper.NewByteConsumer(bytes)
-		fuzzhelper.Fill(step, c)
+		fuzzhelper.Fill(steps, c)
 		count := 0
 
 		defer func() {
@@ -44,7 +43,7 @@ func FuzzStack(f *testing.F) {
 			}
 		}()
 
-		for step != nil {
+		for _, step := range *steps {
 			count++
 			switch step.Operation {
 			case pushOp:
