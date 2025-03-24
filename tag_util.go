@@ -133,6 +133,33 @@ func (r *uintTagRange) fit(val uint64) uint64 {
 	return fitted
 }
 
+type lengthTagRange struct {
+	uintRange uintTagRange
+}
+
+func newLengthTagRange(field reflect.StructField, tag string, defaultMin, defaultMax uint64) lengthTagRange {
+	r := lengthTagRange{
+		uintRange: newUintTagRange(field, tag),
+	}
+	if !r.uintRange.wasSet {
+		r.uintRange = uintTagRange{
+			wasSet:  true,
+			uintMin: defaultMin,
+			uintMax: defaultMax,
+		}
+	}
+
+	return r
+}
+
+func (r *lengthTagRange) fit(val int) int {
+	if val < 0 {
+		return int(r.uintRange.uintMin)
+	}
+
+	return int(r.uintRange.fit(uint64(val)))
+}
+
 type floatTagRange struct {
 	wasSet   bool
 	floatMin float64

@@ -121,7 +121,7 @@ func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzT
 func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	//print(leftPad(len(path)))
 	val := int(c.Int64(BytesForNative))
-	sliceLen := tags.fitSliceLengthVal(val)
+	sliceLen := tags.sliceRange.fit(val)
 
 	//print("slice ", sliceLen)
 	if !value.CanSet() {
@@ -138,7 +138,7 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzz
 func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	//print(leftPad(len(path)))
 	val := int(c.Int64(BytesForNative))
-	mapLen := tags.fitMapLength(val)
+	mapLen := tags.mapRange.fit(val)
 
 	//print("map ", mapLen)
 	if !value.CanSet() {
@@ -186,7 +186,7 @@ func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuz
 	}
 
 	lengthVal := int(c.Int64(BytesForNative))
-	strLength := tags.fitStringLength(lengthVal)
+	strLength := tags.stringRange.fit(lengthVal)
 
 	val := c.String(strLength)
 	value.SetString(val)

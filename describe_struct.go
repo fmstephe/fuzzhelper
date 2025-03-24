@@ -152,7 +152,7 @@ func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tag
 func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.sliceLengthMin, tags.sliceLengthMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.sliceRange.uintRange.uintMin, tags.sliceRange.uintRange.uintMax))
 
 	sliceLen := 1
 
@@ -170,7 +170,7 @@ func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags 
 func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.mapLengthMin, tags.mapLengthMax))
+	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.mapRange.uintRange.uintMin, tags.mapRange.uintRange.uintMax))
 
 	mapLen := 1
 
@@ -211,7 +211,7 @@ func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags
 		return
 	}
 
-	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.stringLengthMin, tags.stringLengthMax)
+	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.stringRange.uintRange.uintMin, tags.stringRange.uintRange.uintMax)
 	return
 }
 
