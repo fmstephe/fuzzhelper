@@ -9,8 +9,7 @@ import (
 )
 
 type SortedTreeFuzzStep struct {
-	Value    string `fuzz-string-range:"1,256"`
-	NextStep *SortedTreeFuzzStep
+	Value string `fuzz-string-range:"1,256"`
 }
 
 // Using StackFuzzStep we stress test the SortedTree with a random series of added string values
@@ -19,19 +18,19 @@ type SortedTreeFuzzStep struct {
 func FuzzSortedTree(f *testing.F) {
 	f.Fuzz(func(t *testing.T, bytes []byte) {
 		tree := New()
-		step := &SortedTreeFuzzStep{}
+		steps := &[]SortedTreeFuzzStep{}
 		c := fuzzhelper.NewByteConsumer(bytes)
-		fuzzhelper.Fill(step, c)
+		fuzzhelper.Describe(&[]SortedTreeFuzzStep{})
+		fuzzhelper.Fill(steps, c)
 
 		sortedStrings := []string{}
 
-		for step != nil {
+		for _, step := range *steps {
 			tree.Add(step.Value)
 			sortedStrings = append(sortedStrings, step.Value)
 			slices.Sort(sortedStrings)
 			assert.Equal(t, sortedStrings[0], tree.Least(), "Tree %s", tree)
 			assert.Equal(t, sortedStrings[len(sortedStrings)-1], tree.Greatest(), "Tree %s", tree)
-			step = step.NextStep
 		}
 	})
 }

@@ -14,6 +14,10 @@ func Fill(root any, c *ByteConsumer) {
 	visitRoot(&fillVisitor{}, root, c)
 }
 
+func (v *fillVisitor) canGrowRootSlice() bool {
+	return true
+}
+
 func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags, path valuePath) {
 	//print(leftPad(len(path)))
 	//print("bool")
