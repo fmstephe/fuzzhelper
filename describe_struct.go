@@ -14,7 +14,7 @@ type describeVisitor struct {
 }
 
 func Describe(root any) {
-	visitRoot(&describeVisitor{}, root, NewByteConsumer([]byte{1, 2, 3}))
+	visitRoot(&describeVisitor{}, root, newByteConsumer([]byte{1, 2, 3}))
 }
 
 func shortenString(s string) string {
@@ -66,11 +66,11 @@ func (v *describeVisitor) canGrowRootSlice() bool {
 	return false
 }
 
-func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitBool(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 }
 
-func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitInt(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -88,7 +88,7 @@ func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fu
 
 }
 
-func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitUint(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -105,11 +105,11 @@ func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags f
 	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.uintRange.uintMin, tags.uintRange.uintMax)
 }
 
-func (v *describeVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitUintptr(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitFloat(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -135,7 +135,7 @@ func (v *describeVisitor) visitArray(value reflect.Value, tags fuzzTags, path va
 	introDescription(value, tags, path)
 }
 
-func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitPointer(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	//introDescription(value, tags, path)
 
 	if !value.CanSet() {
@@ -149,7 +149,7 @@ func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tag
 	value.Set(newVal)
 }
 
-func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
+func (v *describeVisitor) visitSlice(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
 	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.sliceRange.uintRange.uintMin, tags.sliceRange.uintRange.uintMax)
@@ -167,7 +167,7 @@ func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags 
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
-func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
+func (v *describeVisitor) visitMap(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
 	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.mapRange.uintRange.uintMin, tags.mapRange.uintRange.uintMax)
@@ -197,7 +197,7 @@ func (v *describeVisitor) visitInterface(value reflect.Value, tags fuzzTags, pat
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitString(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
 
 	if !value.CanSet() {

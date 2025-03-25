@@ -9,25 +9,25 @@ type visitFunc func() []visitFunc
 
 type valueVisitor interface {
 	canGrowRootSlice() bool
-	visitBool(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitInt(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitUint(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitFloat(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitBool(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitInt(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitUint(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitUintptr(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitFloat(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitComplex(reflect.Value, fuzzTags, valuePath)
 	visitArray(reflect.Value, fuzzTags, valuePath)
 	visitChan(reflect.Value, fuzzTags, valuePath)
 	visitFunc(reflect.Value, fuzzTags, valuePath)
 	visitInterface(reflect.Value, fuzzTags, valuePath)
-	visitMap(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
-	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
-	visitString(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitMap(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
+	visitPointer(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitSlice(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
+	visitString(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitStruct(reflect.Value, fuzzTags, valuePath) bool
 	visitUnsafePointer(reflect.Value, fuzzTags, valuePath)
 }
 
-func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) visitFunc {
+func newVisitFunc(callback valueVisitor, value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) visitFunc {
 	return func() []visitFunc {
 		//println(fmt.Sprintf("before %#v\n", value.Interface()))
 		ffs := visitValue(callback, value, c, tags, path)
@@ -36,7 +36,7 @@ func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, t
 	}
 }
 
-func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
+func visitRoot(callback valueVisitor, root any, c *byteConsumer) {
 	rootVal := reflect.ValueOf(root)
 
 	path := valuePath{}
@@ -53,14 +53,14 @@ func isPointerToSlice(value reflect.Value) bool {
 	return value.Kind() == reflect.Pointer && value.Elem().Kind() == reflect.Slice
 }
 
-func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *ByteConsumer, path valuePath) {
+func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *byteConsumer, path valuePath) {
 	path = path.add(pointerVal, "*")
 
 	sliceVal := pointerVal.Elem()
 	sliceType := sliceVal.Type().Elem()
 
 	// Fill up the slice with all the available data
-	for i := 0; c.Len() > 0; i++ {
+	for i := 0; c.len() > 0; i++ {
 		// Create a new element for the slice
 		pathName := fmt.Sprintf("[%d]", i)
 		newVal := reflect.New(sliceType).Elem()
@@ -80,7 +80,7 @@ func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *ByteCons
 	}
 }
 
-func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *ByteConsumer, path valuePath) {
+func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *byteConsumer, path valuePath) {
 	values := newDequeue[visitFunc]()
 
 	visitFuncs := visitValue(callback, value, c, newEmptyFuzzTags(), path)
@@ -93,8 +93,8 @@ func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *ByteConsum
 	}
 }
 
-func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) []visitFunc {
-	if c.Len() == 0 {
+func visitValue(callback valueVisitor, value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) []visitFunc {
+	if c.len() == 0 {
 		// There are no more bytes to use to visit data
 		return []visitFunc{}
 	}

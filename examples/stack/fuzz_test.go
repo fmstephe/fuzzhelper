@@ -32,8 +32,13 @@ func FuzzStack(f *testing.F) {
 	f.Fuzz(func(t *testing.T, bytes []byte) {
 		stack := New()
 		steps := &[]StackFuzzStep{}
-		c := fuzzhelper.NewByteConsumer(bytes)
-		fuzzhelper.Fill(steps, c)
+
+		// Run Describe, when running fuzzer as a normal test this will
+		// help understanding how steps is bieng filled
+		fuzzhelper.Describe(&[]StackFuzzStep{})
+
+		// Construct the steps using the data in bytes
+		fuzzhelper.Fill(steps, bytes)
 		count := 0
 
 		defer func() {
