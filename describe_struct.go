@@ -68,7 +68,6 @@ func (v *describeVisitor) canGrowRootSlice() bool {
 
 func (v *describeVisitor) visitBool(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
 	introDescription(value, tags, path)
-	return
 }
 
 func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
@@ -81,12 +80,11 @@ func (v *describeVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fu
 
 	// First check if there is a list of valid string values
 	if tags.intValues.wasSet {
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.intValues.methodName, methodValuesString(tags.intValues.value)))
+		fmt.Fprintf(os.Stdout, "\tmethod (%s): %s\n", tags.intValues.methodName, methodValuesString(tags.intValues.value))
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.intRange.intMin, tags.intRange.intMax))
-	return
+	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.intRange.intMin, tags.intRange.intMax)
 
 }
 
@@ -100,12 +98,11 @@ func (v *describeVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags f
 
 	// First check if there is a list of valid uint values
 	if tags.uintValues.wasSet {
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.uintValues.methodName, methodValuesString(tags.uintValues.value)))
+		fmt.Fprintf(os.Stdout, "\tmethod (%s): %s\n", tags.uintValues.methodName, methodValuesString(tags.uintValues.value))
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.uintRange.uintMin, tags.uintRange.uintMax))
-	return
+	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.uintRange.uintMin, tags.uintRange.uintMax)
 }
 
 func (v *describeVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
@@ -122,12 +119,11 @@ func (v *describeVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags 
 
 	// First check if there is a list of valid float values
 	if tags.floatValues.wasSet {
-		fmt.Fprintln(os.Stdout, fmt.Sprintf("\tmethod (%s): %s", tags.floatValues.methodName, methodValuesString(tags.floatValues.value)))
+		fmt.Fprintf(os.Stdout, "\tmethod (%s): %s\n", tags.floatValues.methodName, methodValuesString(tags.floatValues.value))
 		return
 	}
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %g max: %g", tags.floatRange.floatMin, tags.floatRange.floatMax))
-	return
+	fmt.Fprintf(os.Stdout, "\trange min: %g max: %g\n", tags.floatRange.floatMin, tags.floatRange.floatMax)
 }
 
 func (v *describeVisitor) visitComplex(value reflect.Value, tags fuzzTags, path valuePath) {
@@ -156,7 +152,7 @@ func (v *describeVisitor) visitPointer(value reflect.Value, c *ByteConsumer, tag
 func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.sliceRange.uintRange.uintMin, tags.sliceRange.uintRange.uintMax))
+	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.sliceRange.uintRange.uintMin, tags.sliceRange.uintRange.uintMax)
 
 	sliceLen := 1
 
@@ -174,7 +170,7 @@ func (v *describeVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags 
 func (v *describeVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
-	fmt.Fprintln(os.Stdout, fmt.Sprintf("\trange min: %d max: %d", tags.mapRange.uintRange.uintMin, tags.mapRange.uintRange.uintMax))
+	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.mapRange.uintRange.uintMin, tags.mapRange.uintRange.uintMax)
 
 	mapLen := 1
 
@@ -216,7 +212,6 @@ func (v *describeVisitor) visitString(value reflect.Value, c *ByteConsumer, tags
 	}
 
 	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.stringRange.uintRange.uintMin, tags.stringRange.uintRange.uintMax)
-	return
 }
 
 func (v *describeVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) bool {

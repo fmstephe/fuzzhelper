@@ -232,7 +232,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return []visitFunc{}
 
 	default:
-		panic(fmt.Errorf("Unsupported kind %s\n", value.Kind()))
+		panic(fmt.Errorf("unsupported kind %s", value.Kind()))
 	}
 
 	panic("unreachable")

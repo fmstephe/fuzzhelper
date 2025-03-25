@@ -33,6 +33,7 @@ func ExampleDescribe_StringMethod() {
 
 func ExampleDescribe_UnexportedString() {
 	type testStruct struct {
+		//lint:ignore U1000 This field is actually used via reflection
 		unexportedStringField string `fuzz-string-range:"1,5"`
 	}
 
@@ -72,6 +73,7 @@ func ExampleDescribe_IntMethod() {
 
 func ExampleDescribe_UnexportedInt() {
 	type testStruct struct {
+		//lint:ignore U1000 This field is actually used via reflection
 		unexportedIntField int `fuzz-int-range:"-10,50"`
 	}
 
@@ -111,6 +113,7 @@ func ExampleDescribe_UintMethod() {
 
 func ExampleDescribe_UnexportedUint() {
 	type testStruct struct {
+		//lint:ignore U1000 This field is actually used via reflection
 		unexportedUintField uint `fuzz-uint-range:"2,7"`
 	}
 
@@ -150,6 +153,7 @@ func ExampleDescribe_FloatMethod() {
 
 func ExampleDescribe_UnexportedFloat() {
 	type testStruct struct {
+		//lint:ignore U1000 This field is actually used via reflection
 		unexportedFloatField float64 `fuzz-float-range:"0.1,0.5"`
 	}
 
@@ -205,6 +209,7 @@ type parentStruct struct {
 	// struct processed fifth
 	PointerPointerChild **childStruct
 	// struct processed first
+	//lint:ignore U1000 This field is actually used via reflection
 	unexportedChild childStruct
 	// struct processed fourth
 	PointerChild *childStruct
