@@ -1,225 +1,90 @@
 package fuzzhelper
 
 import (
-	"fmt"
 	"reflect"
-	"slices"
+	"strings"
 )
 
-type fillFunc func() []fillFunc
+var _ valueVisitor = &fillVisitor{}
 
-func newFillFunc(value reflect.Value, c *ByteConsumer, tags fuzzTags) fillFunc {
-	return func() []fillFunc {
-		println(fmt.Sprintf("before %#v\n", value.Interface()))
-		ffs := fill(value, c, tags)
-		println(fmt.Sprintf("after %#v\n", value.Interface()))
-		return ffs
-	}
+type fillVisitor struct {
 }
 
 func Fill(root any, c *ByteConsumer) {
-	fillFuncs := fill(reflect.ValueOf(root), c, newEmptyFuzzTags())
-
-	values := newDequeue[fillFunc]()
-	slices.Reverse(fillFuncs)
-	values.addMany(fillFuncs)
-
-	for values.len() != 0 {
-		ff := values.popFirst()
-		fillFuncs := ff()
-		values.addMany(fillFuncs)
-	}
-
-	println("")
+	visitRoot(&fillVisitor{}, root, c)
 }
 
-func fill(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
-	if c.Len() == 0 {
-		// There are no more bytes to use to fill data
-		return []fillFunc{}
-	}
-
-	switch value.Kind() {
-	case reflect.Bool:
-		fillBool(value, c)
-		return []fillFunc{}
-
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		fillInt(value, c, tags)
-		return []fillFunc{}
-
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		fillUint(value, c, tags)
-		return []fillFunc{}
-
-	case reflect.Uintptr:
-		// Uintptr is ignored
-		return []fillFunc{}
-
-	case reflect.Float32, reflect.Float64:
-		fillFloat(value, c, tags)
-		return []fillFunc{}
-
-	case reflect.Complex64, reflect.Complex128:
-		// Complex are ignored
-		// Only because I don't use them, and I don't think many people use them
-		// If needed support should be easy to add
-		return []fillFunc{}
-
-	case reflect.Array:
-		return fillArray(value, c)
-
-	case reflect.Chan:
-		return fillChan(value, c, tags)
-
-	case reflect.Func:
-		// functions are ignored
-		return []fillFunc{}
-
-	case reflect.Interface:
-		// Can't do anything here - we can't instantiate an interface type
-		// We don't know which type to create here
-		return []fillFunc{}
-
-	case reflect.Map:
-		return fillMap(value, c, tags)
-
-	case reflect.Pointer:
-		return fillPointer(value, c)
-
-	case reflect.Slice:
-		return fillSlice(value, c, tags)
-
-	case reflect.String:
-		fillString(value, c, tags)
-		return []fillFunc{}
-
-	case reflect.Struct:
-		return fillStruct(value, c)
-
-	case reflect.UnsafePointer:
-		// Unsafe pointers are just ignored
-		return []fillFunc{}
-
-	default:
-		fmt.Printf("Unsupported kind %s\n", value.Kind())
-	}
-
-	panic("unreachable")
-}
-
-func canSet(value reflect.Value) bool {
-	// The initial value passed into Fill method must be an
-	// instantiated struct/map/array/slice or a pointer to one of
-	// these.  Once we drill past this unsettable level we will
-	// fill in values recursively as we find them.
-	if value.CanSet() {
-		println(": can set")
-		return true
-	}
-
-	println(": can't set")
-	return false
-}
-
-func fillString(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
-	// First check if there is a list of valid string values
-	if len(tags.stringValues) != 0 {
-		val := c.Uint64(BytesForNative)
-		str := tags.stringValues[val%uint64(len(tags.stringValues))]
-
-		print("string ", len(str))
-		if !canSet(value) {
-			return
-		}
-
-		value.SetString(str)
+func (v *fillVisitor) visitBool(value reflect.Value, c *ByteConsumer, _ fuzzTags, path valuePath) {
+	//print(leftPad(len(path)))
+	//print("bool")
+	if !value.CanSet() {
 		return
 	}
 
-	lengthVal := int(c.Int64(BytesForNative))
-	strLength := tags.fitStringLength(lengthVal)
-
-	print("string ", strLength)
-	if !canSet(value) {
-		return
-	}
-
-	val := c.String(strLength)
-	value.SetString(val)
-}
-
-func fillBool(value reflect.Value, c *ByteConsumer) {
-	print("bool")
-	if !canSet(value) {
-		return
-	}
 	val := c.Bool()
 	value.SetBool(val)
 }
 
-func fillInt(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
-	print("int")
+func (v *fillVisitor) visitInt(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+	//print(leftPad(len(path)))
+	//print("int")
+	if !value.CanSet() {
+		return
+	}
 
 	// First check there is a list of valid int values
 	if len(tags.intValues) != 0 {
 		val := c.Uint64(BytesForNative)
 		intVal := tags.intValues[val%uint64(len(tags.intValues))]
-		if !canSet(value) {
-			return
-		}
 
 		value.SetInt(intVal)
 		return
 	}
 
-	if !canSet(value) {
-		return
-	}
 	val := c.Int64(value.Type().Size())
 	fittedVal := tags.fitIntVal(val)
 	value.SetInt(fittedVal)
 }
 
-func fillUint(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
-	print("uint")
+func (v *fillVisitor) visitUint(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+	//print(leftPad(len(path)))
+	//print("uint")
+	if !value.CanSet() {
+		return
+	}
 
 	// First check there is a list of valid uint values
 	if len(tags.uintValues) != 0 {
 		val := c.Uint64(BytesForNative)
 		uintVal := tags.uintValues[val%uint64(len(tags.uintValues))]
-		if !canSet(value) {
-			return
-		}
 
 		value.SetUint(uintVal)
 		return
 	}
 
-	if !canSet(value) {
-		return
-	}
 	val := c.Uint64(value.Type().Size())
 	fittedVal := tags.fitUintVal(val)
 	value.SetUint(fittedVal)
 }
 
-func fillFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
-	print("float")
+func (v *fillVisitor) visitUintptr(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+	//print(leftPad(len(path)))
+	//println("uintptr: ignored")
+	return
+}
+
+func (v *fillVisitor) visitFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+	//print(leftPad(len(path)))
+	//print("float")
+	if !value.CanSet() {
+		return
+	}
 
 	// First check there is a list of valid uint values
 	if len(tags.floatValues) != 0 {
 		val := c.Uint64(BytesForNative)
 		floatVal := tags.floatValues[val%uint64(len(tags.floatValues))]
-		if !canSet(value) {
-			return
-		}
-
 		value.SetFloat(floatVal)
-		return
-	}
-
-	if !canSet(value) {
 		return
 	}
 
@@ -228,148 +93,112 @@ func fillFloat(value reflect.Value, c *ByteConsumer, tags fuzzTags) {
 	value.SetFloat(fittedVal)
 }
 
-func fillStruct(value reflect.Value, c *ByteConsumer) []fillFunc {
-	print("struct ", value.Type().Name())
-	canSet(value)
-
-	newValues := []fillFunc{}
-	vType := value.Type()
-	for i := 0; i < vType.NumField(); i++ {
-		vField := value.Field(i)
-		tField := vType.Field(i)
-		tags := newFuzzTags(value, tField)
-		newValues = append(newValues, fill(vField, c, tags)...)
-	}
-
-	return newValues
+func (v *fillVisitor) visitComplex(value reflect.Value, tags fuzzTags, path valuePath) {
+	// Do nothing - complex numbers are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
+	// We can add it, I just don't use them so I didn't bother at first
 }
 
-func fillPointer(value reflect.Value, c *ByteConsumer) []fillFunc {
-	print("pointer")
-	if !canSet(value) && value.IsNil() {
-		return []fillFunc{}
-	}
-
-	if value.IsNil() {
-		// If the value is nil - allocate a value for it to point to
-		pType := value.Type()
-		vType := pType.Elem()
-		newVal := reflect.New(vType)
-		value.Set(newVal)
-	}
-	return []fillFunc{
-		newFillFunc(value.Elem(), c, newEmptyFuzzTags()),
-	}
+func (v *fillVisitor) visitArray(value reflect.Value, tags fuzzTags, path valuePath) {
+	// Do nothing - the array is fixed in size and we do nothing here
+	// Each of it's elements will be visited and we will fill those
 }
 
-func fillSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
+func (v *fillVisitor) visitPointer(value reflect.Value, c *ByteConsumer, _ fuzzTags, path valuePath) {
+	//print(leftPad(len(path)))
+	//print("pointer")
+	if !value.CanSet() {
+		return
+	}
+
+	// If the value is nil - allocate a value for it to point to
+	pType := value.Type()
+	vType := pType.Elem()
+	newVal := reflect.New(vType)
+	value.Set(newVal)
+}
+
+func (v *fillVisitor) visitSlice(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
+	//print(leftPad(len(path)))
 	val := int(c.Int64(BytesForNative))
 	sliceLen := tags.fitSliceLengthVal(val)
 
-	print("slice ", sliceLen)
-	if !canSet(value) && value.IsNil() {
-		return []fillFunc{}
+	//print("slice ", sliceLen)
+	if !value.CanSet() {
+		return 0
 	}
 
-	if value.IsNil() {
-		newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
-		value.Set(newSlice)
-	}
+	newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
+	value.Set(newSlice)
 
-	newValues := []fillFunc{}
-	for i := 0; i < value.Len(); i++ {
-		newValues = append(newValues, fill(value.Index(i), c, tags)...)
-	}
-
-	return newValues
-}
-
-func fillArray(value reflect.Value, c *ByteConsumer) []fillFunc {
-	print("array")
-	canSet(value)
-
-	newValues := []fillFunc{}
-	for i := 0; i < value.Len(); i++ {
-		newValues = append(newValues, fill(value.Index(i), c, newEmptyFuzzTags())...)
-	}
-	return newValues
+	return sliceLen
 }
 
 // TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
-func fillMap(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
+func (v *fillVisitor) visitMap(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) int {
+	//print(leftPad(len(path)))
 	val := int(c.Int64(BytesForNative))
 	mapLen := tags.fitMapLength(val)
 
-	print("map ", mapLen)
-	if !canSet(value) && value.IsNil() {
-		return []fillFunc{}
+	//print("map ", mapLen)
+	if !value.CanSet() {
+		return 0
 	}
 
 	mapType := value.Type()
-	keyType := mapType.Key()
-	valType := mapType.Elem()
-
-	newMap := reflect.MakeMap(mapType)
-	newValues := []fillFunc{}
-
-	for range mapLen {
-		// Create the key
-		mapKeyP := reflect.New(keyType)
-		mapKey := mapKeyP.Elem()
-		// Note here that the tags used to create this map are also
-		// used to create the key
-		newValues = append(newValues, fill(mapKey, c, tags)...)
-
-		// Create the value
-		mapValP := reflect.New(valType)
-		mapVal := mapValP.Elem()
-		// Note here that the tags used to create this map are also
-		// used to create the value
-		newValues = append(newValues, fill(mapVal, c, tags)...)
-
-		// Add key/val to map
-		println("setting map element")
-		newMap.SetMapIndex(mapKey, mapVal)
-	}
-
+	newMap := reflect.MakeMapWithSize(mapType, mapLen)
 	value.Set(newMap)
 
-	return newValues
+	return mapLen
 }
 
-// TODO there is a bug here, if the channel can't be set, but is non-nil we will still try to set it
-func fillChan(value reflect.Value, c *ByteConsumer, tags fuzzTags) []fillFunc {
-	val := int(c.Int64(BytesForNative))
-	chanLen := tags.fitChanLength(val)
+func (v *fillVisitor) visitChan(value reflect.Value, tags fuzzTags, path valuePath) {
+	// Do nothing - channels are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
+}
 
-	print("chan ", chanLen)
-	if !canSet(value) && value.IsNil() {
-		return []fillFunc{}
+func (v *fillVisitor) visitFunc(value reflect.Value, tags fuzzTags, path valuePath) {
+	// Do nothing - functions are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
+}
+
+func (v *fillVisitor) visitInterface(value reflect.Value, tags fuzzTags, path valuePath) {
+	// Do nothing - interfaces are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
+}
+
+func leftPad(pad int) string {
+	return strings.Repeat(" ", pad)
+}
+
+func (v *fillVisitor) visitString(value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) {
+	if !value.CanSet() {
+		return
 	}
 
-	chanType := value.Type()
-	valType := chanType.Elem()
+	// First check if there is a list of valid string values
+	if len(tags.stringValues) != 0 {
+		val := c.Uint64(BytesForNative)
+		str := tags.stringValues[val%uint64(len(tags.stringValues))]
 
-	// Create a channel
-	newChan := reflect.MakeChan(value.Type(), chanLen)
-	newValues := []fillFunc{}
-
-	for range chanLen {
-		// Create an element for that channel
-		newValP := reflect.New(valType)
-		newVal := newValP.Elem()
-		// Note here that the tags used to create this chan are also
-		// used to create the values added to the channel
-		newValues = append(newValues, fill(newVal, c, tags)...)
-
-		// Put the element on the channel
-		newValues = append(newValues, func() []fillFunc {
-			newChan.Send(newVal)
-			return []fillFunc{}
-		})
+		value.SetString(str)
+		return
 	}
 
-	value.Set(newChan)
+	lengthVal := int(c.Int64(BytesForNative))
+	strLength := tags.fitStringLength(lengthVal)
 
-	return newValues
+	val := c.String(strLength)
+	value.SetString(val)
+}
+
+func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path valuePath) bool {
+	// Do nothing - the struct is fixed in size and we do nothing here
+	// Each of it's fields will be visited and we will fill those
+	return true
+}
+
+func (v *fillVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path valuePath) {
+	// Do nothing - unsafe pointers are simply not supported
+	// we still visit them so we can _describe_ that we don't support them
 }

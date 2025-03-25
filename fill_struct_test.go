@@ -2,6 +2,7 @@ package fuzzhelper
 
 import (
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -35,8 +36,6 @@ func TestFill_SimpleTypes(t *testing.T) {
 		SliceValue []uint
 
 		MapValue map[string]float64
-		// Can't do simple comparison of channel
-		//ChannelValue chan float64
 	}
 
 	expected := testStruct{
@@ -157,7 +156,7 @@ func TestFill_Map(t *testing.T) {
 
 	// Set all the fill values here
 	c := NewByteConsumer([]byte{})
-	// Channel is size 1
+	// map is size 1
 	c.pushUint64(1, BytesForNative)
 	// IntValue field
 	c.pushUint64(1, BytesForNative)
@@ -168,25 +167,6 @@ func TestFill_Map(t *testing.T) {
 	Fill(&val, c)
 	assert.Equal(t, 1, len(val.MapValue))
 	assert.Equal(t, 2, val.MapValue[1].IntField)
-}
-
-func TestFill_Channel(t *testing.T) {
-	type testStruct struct {
-		ChanValue chan float64
-	}
-
-	// Set all the fill values here
-	c := NewByteConsumer([]byte{})
-	// Channel is size 1
-	c.pushUint64(1, BytesForNative)
-	// IntValue field
-	c.pushFloat64(3.1415, BytesFor64)
-
-	// Test value
-	val := testStruct{}
-	Fill(&val, c)
-	assert.Equal(t, 1, len(val.ChanValue))
-	assert.Equal(t, 3.1415, <-val.ChanValue)
 }
 
 // Test a series of nested structs.
@@ -386,4 +366,35 @@ func TestBalancedBinaryTree(t *testing.T) {
 	Fill(&val, c)
 
 	assert.Equal(t, expected, val)
+}
+
+func TestFill_UnsupportedTypes(t *testing.T) {
+	type testStruct struct {
+		ChanField          chan int
+		InterfaceField     any
+		ComplexField       complex128
+		FuncField          func()
+		UintptrField       uintptr
+		UnsafePointerField unsafe.Pointer
+	}
+
+	c := NewByteConsumer([]byte{})
+	c.pushInt64(1, BytesForNative)
+	c.pushInt64(2, BytesForNative)
+	c.pushInt64(3, BytesForNative)
+	c.pushInt64(4, BytesForNative)
+	c.pushInt64(5, BytesForNative)
+	c.pushInt64(6, BytesForNative)
+	c.pushInt64(7, BytesForNative)
+	c.pushInt64(8, BytesForNative)
+	c.pushInt64(9, BytesForNative)
+	c.pushInt64(10, BytesForNative)
+	c.pushInt64(11, BytesForNative)
+	c.pushInt64(12, BytesForNative)
+
+	val := &testStruct{}
+	Fill(val, c)
+
+	// Assert that none of those fields are set
+	assert.Equal(t, &testStruct{}, val)
 }

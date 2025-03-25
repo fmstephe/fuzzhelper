@@ -1,7 +1,6 @@
 package fuzzhelper
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"strconv"
@@ -12,6 +11,9 @@ const defaultLengthMin = 0
 const defaultLengthMax = 20
 
 type fuzzTags struct {
+	// Debugging field containing the fieldName of the struct field the tag was
+	// taken from
+	fieldName string
 	//
 	intMax int64
 	intMin int64
@@ -31,41 +33,40 @@ type fuzzTags struct {
 	mapLengthMin uint64
 	mapLengthMax uint64
 	//
-	chanLengthMin uint64
-	chanLengthMax uint64
+	intValuesMethod string
+	intValues       []int64
 	//
-	intValues []int64
+	uintValuesMethod string
+	uintValues       []uint64
 	//
-	uintValues []uint64
+	floatValuesMethod string
+	floatValues       []float64
 	//
-	floatValues []float64
-	//
-	stringValues []string
+	stringValuesMethod string
+	stringValues       []string
 }
 
 func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	t := newEmptyFuzzTags()
 
-	intMin, intMax, ok := getInt64MinMax(field, "fuzz-int-range")
-	if ok {
+	t.fieldName = field.Name
+
+	if intMin, intMax, ok := getInt64MinMax(field, "fuzz-int-range"); ok {
 		t.intMin = intMin
 		t.intMax = intMax
 	}
 
-	uintMin, uintMax, ok := getUint64MinMax(field, "fuzz-uint-range")
-	if ok {
+	if uintMin, uintMax, ok := getUint64MinMax(field, "fuzz-uint-range"); ok {
 		t.uintMin = uintMin
 		t.uintMax = uintMax
 	}
 
-	floatMin, floatMax, ok := getFloat64MinMax(field, "fuzz-float-range")
-	if ok {
+	if floatMin, floatMax, ok := getFloat64MinMax(field, "fuzz-float-range"); ok {
 		t.floatMin = floatMin
 		t.floatMax = floatMax
 	}
 
-	sliceLengthMin, sliceLengthMax, ok := getUint64MinMax(field, "fuzz-slice-range")
-	if ok {
+	if sliceLengthMin, sliceLengthMax, ok := getUint64MinMax(field, "fuzz-slice-range"); ok {
 		t.sliceLengthMin = sliceLengthMin
 		t.sliceLengthMax = sliceLengthMax
 	} else {
@@ -73,8 +74,7 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 		t.sliceLengthMax = defaultLengthMax
 	}
 
-	stringLengthMin, stringLengthMax, ok := getUint64MinMax(field, "fuzz-string-range")
-	if ok {
+	if stringLengthMin, stringLengthMax, ok := getUint64MinMax(field, "fuzz-string-range"); ok {
 		t.stringLengthMin = stringLengthMin
 		t.stringLengthMax = stringLengthMax
 	} else {
@@ -82,8 +82,7 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 		t.stringLengthMax = defaultLengthMax
 	}
 
-	mapLengthMin, mapLengthMax, ok := getUint64MinMax(field, "fuzz-map-range")
-	if ok {
+	if mapLengthMin, mapLengthMax, ok := getUint64MinMax(field, "fuzz-map-range"); ok {
 		t.mapLengthMin = mapLengthMin
 		t.mapLengthMax = mapLengthMax
 	} else {
@@ -91,32 +90,23 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 		t.mapLengthMax = defaultLengthMax
 	}
 
-	chanLengthMin, chanLengthMax, ok := getUint64MinMax(field, "fuzz-chan-range")
-	if ok {
-		t.chanLengthMin = chanLengthMin
-		t.chanLengthMax = chanLengthMax
-	} else {
-		t.chanLengthMin = defaultLengthMin
-		t.chanLengthMax = defaultLengthMax
-	}
-
-	intValues, ok := callMethodFromTag[[]int64](structVal, field, "fuzz-int-method")
-	if ok {
+	if intValues, methodName, ok := callMethodFromTag[[]int64](structVal, field, "fuzz-int-method"); ok {
+		t.intValuesMethod = methodName
 		t.intValues = intValues
 	}
 
-	uintValues, ok := callMethodFromTag[[]uint64](structVal, field, "fuzz-uint-method")
-	if ok {
+	if uintValues, methodName, ok := callMethodFromTag[[]uint64](structVal, field, "fuzz-uint-method"); ok {
+		t.uintValuesMethod = methodName
 		t.uintValues = uintValues
 	}
 
-	floatValues, ok := callMethodFromTag[[]float64](structVal, field, "fuzz-float-method")
-	if ok {
+	if floatValues, methodName, ok := callMethodFromTag[[]float64](structVal, field, "fuzz-float-method"); ok {
+		t.floatValuesMethod = methodName
 		t.floatValues = floatValues
 	}
 
-	stringValues, ok := callMethodFromTag[[]string](structVal, field, "fuzz-string-method")
-	if ok {
+	if stringValues, methodName, ok := callMethodFromTag[[]string](structVal, field, "fuzz-string-method"); ok {
+		t.stringValuesMethod = methodName
 		t.stringValues = stringValues
 	}
 
@@ -145,10 +135,6 @@ func (t *fuzzTags) fitStringLength(val int) int {
 
 func (t *fuzzTags) fitMapLength(val int) int {
 	return fitLengthVal(t.mapLengthMin, t.mapLengthMax, val)
-}
-
-func (t *fuzzTags) fitChanLength(val int) int {
-	return fitLengthVal(t.chanLengthMin, t.chanLengthMax, val)
 }
 
 func (t *fuzzTags) fitFloatVal(val float64) float64 {
@@ -189,7 +175,7 @@ func fitIntValInternal(intMin, intMax, val int64) int64 {
 	}
 
 	fitted := (absInt(val) % spread) + intMin
-	println("int val fitted", val, intMin, intMax, fitted)
+	//println("int val fitted", val, intMin, intMax, fitted)
 
 	return fitted
 }
@@ -205,7 +191,7 @@ func fitUintValInternal(uintMin, uintMax, val uint64) uint64 {
 	}
 
 	fitted := (val % spread) + uintMin
-	println("uint val fitted", val, uintMin, uintMax, fitted)
+	//println("uint val fitted", val, uintMin, uintMax, fitted)
 
 	return fitted
 }
@@ -236,7 +222,7 @@ func fitFloatValInternal(floatMin, floatMax, val float64) float64 {
 	}
 
 	fitted := math.Mod(math.Abs(val), spread) + floatMin
-	println("float val fitted", val, floatMin, floatMax, fitted)
+	//println("float val fitted", val, floatMin, floatMax, fitted)
 
 	return fitted
 }
@@ -254,105 +240,109 @@ func absInt(val int64) int64 {
 }
 
 func getFloat64MinMax(field reflect.StructField, tag string) (minVal, maxVal float64, found bool) {
-	println(field.Tag)
+	//println(field.Tag)
 
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
-		println("no tag found: ", tag, field.Name)
+		//println("no tag found: ", tag, field.Name)
 		return 0, 0, false
 	}
 
 	parts := strings.Split(valStr, ",")
 	if len(parts) != 2 {
-		println("bad min max tag", valStr)
+		//println("bad min max tag", valStr)
 		return 0, 0, false
 	}
 
 	minVal, err := strconv.ParseFloat(parts[0], 64)
 	if err != nil {
-		println("bad min tag value", valStr)
+		//println("bad min tag value", valStr)
 		return 0, 0, false
 	}
 
 	maxVal, err = strconv.ParseFloat(parts[1], 64)
 	if err != nil {
-		println("bad max tag value", valStr)
+		//println("bad max tag value", valStr)
 		return 0, 0, false
 	}
 
-	println("float64 min max", tag, minVal, maxVal)
+	//println("float64 min max", tag, minVal, maxVal)
 	return minVal, maxVal, true
 }
 
 func getInt64MinMax(field reflect.StructField, tag string) (minVal, maxVal int64, found bool) {
-	println(field.Tag)
+	//println(field.Tag)
 
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
-		println("no tag found: ", tag, field.Name)
+		//println("no tag found: ", tag, field.Name)
 		return 0, 0, false
 	}
 
 	parts := strings.Split(valStr, ",")
 	if len(parts) != 2 {
-		println("bad min max tag", valStr)
+		//println("bad min max tag", valStr)
 		return 0, 0, false
 	}
 
 	minVal, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil {
-		println("bad min tag value", valStr)
+		//println("bad min tag value", valStr)
 		return 0, 0, false
 	}
 
 	maxVal, err = strconv.ParseInt(parts[1], 10, 64)
 	if err != nil {
-		println("bad max tag value", valStr)
+		//println("bad max tag value", valStr)
 		return 0, 0, false
 	}
 
-	println("int64 min max", tag, minVal, maxVal)
+	//println("int64 min max", tag, minVal, maxVal)
 	return minVal, maxVal, true
 }
 
 func getUint64MinMax(field reflect.StructField, tag string) (minVal, maxVal uint64, found bool) {
-	println(field.Tag)
+	//println(field.Tag)
 
 	valStr, ok := field.Tag.Lookup(tag)
 	if !ok {
-		println("no tag found: ", tag, field.Name)
+		//println("no tag found: ", tag, field.Name)
 		return 0, 0, false
 	}
 
 	parts := strings.Split(valStr, ",")
 	if len(parts) != 2 {
-		println("bad min max tag", valStr)
+		//println("bad min max tag", valStr)
 	}
 
 	minVal, err := strconv.ParseUint(parts[0], 10, 64)
 	if err != nil {
-		println("bad min tag value", valStr)
+		//println("bad min tag value", valStr)
 		return 0, 0, false
 	}
 
 	maxVal, err = strconv.ParseUint(parts[1], 10, 64)
 	if err != nil {
-		println("bad max tag value", valStr)
+		//println("bad max tag value", valStr)
 		return 0, 0, false
 	}
 
-	println("uint64 min max", tag, minVal, maxVal)
+	//println("uint64 min max", tag, minVal, maxVal)
 	return minVal, maxVal, true
 }
 
-func callMethodFromTag[T any](structVal reflect.Value, field reflect.StructField, tag string) (val T, found bool) {
+func callMethodFromTag[T any](structVal reflect.Value, field reflect.StructField, tag string) (val T, methodName string, found bool) {
 
 	methodName, ok := field.Tag.Lookup(tag)
 	if !ok {
-		println("no tag found: ", tag, field.Name)
-		return val, false
+		//println("no tag found: ", tag, field.Name)
+		return val, methodName, false
 	}
 
+	if !isExported(methodName) {
+		//println("method is not exported, can't be called: ", methodName, field.Name, structVal.Type().String())
+		return val, methodName, false
+	}
 	// Try to get the method from the struct
 	// We look for pointer receiver method first, then value receivers
 	// We it in this order under the assumption that people usually use pointer receivers
@@ -360,28 +350,29 @@ func callMethodFromTag[T any](structVal reflect.Value, field reflect.StructField
 	if !method.IsValid() {
 		method = structVal.MethodByName(methodName)
 		if !method.IsValid() {
-			println("no method found: ", methodName, field.Name, structVal.Type().String())
-			return val, false
+			//println("no method found: ", methodName, field.Name, structVal.Type().String())
+			return val, methodName, false
 		}
 	}
 
 	methodType := method.Type()
 	if methodType.NumIn() != 0 {
-		println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
-		return val, false
+		//println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
+		return val, methodName, false
 	}
 
 	if methodType.NumOut() != 1 {
-		println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
-		return val, false
+		//println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
+		return val, methodName, false
 	}
 
 	returnType := methodType.Out(0)
 	if returnType != reflect.TypeFor[T]() {
-		println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
+		//println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
 	}
 
 	result := method.Call([]reflect.Value{})
 
-	return result[0].Interface().(T), true
+	//println("foo")
+	return result[0].Interface().(T), methodName, true
 }
