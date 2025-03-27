@@ -164,7 +164,7 @@ func (v *fillVisitor) visitFunc(value reflect.Value, tags fuzzTags, path valuePa
 	// we still visit them so we can _describe_ that we don't support them
 }
 
-func (v *fillVisitor) visitInterface(value reflect.Value, tags fuzzTags, path valuePath) {
+func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
 	// Do nothing - interfaces are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
 }

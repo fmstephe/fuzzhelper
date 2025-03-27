@@ -18,7 +18,7 @@ type valueVisitor interface {
 	visitArray(reflect.Value, fuzzTags, valuePath)
 	visitChan(reflect.Value, fuzzTags, valuePath)
 	visitFunc(reflect.Value, fuzzTags, valuePath)
-	visitInterface(reflect.Value, fuzzTags, valuePath)
+	visitInterface(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitMap(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
 	visitPointer(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitSlice(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
@@ -143,7 +143,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *byteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Interface:
-		callback.visitInterface(value, tags, path)
+		callback.visitInterface(value, c, tags, path)
 		return []visitFunc{}
 
 	case reflect.Map:
