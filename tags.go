@@ -22,10 +22,11 @@ type fuzzTags struct {
 	stringRange lengthTagRange
 	mapRange    lengthTagRange
 
-	intValues    valueTag[[]int64]
-	uintValues   valueTag[[]uint64]
-	floatValues  valueTag[[]float64]
-	stringValues valueTag[[]string]
+	intValues       valueTag[[]int64]
+	uintValues      valueTag[[]uint64]
+	floatValues     valueTag[[]float64]
+	stringValues    valueTag[[]string]
+	interfaceValues valueTag[[]any]
 }
 
 func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
@@ -44,6 +45,7 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	t.uintValues = newValueTag[[]uint64](structVal, field, "fuzz-uint-method")
 	t.floatValues = newValueTag[[]float64](structVal, field, "fuzz-float-method")
 	t.stringValues = newValueTag[[]string](structVal, field, "fuzz-string-method")
+	t.interfaceValues = newValueTag[[]any](structVal, field, "fuzz-interface-method")
 
 	return t
 }
