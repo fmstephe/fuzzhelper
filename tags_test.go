@@ -441,6 +441,60 @@ func TestFuzzTags_MapLengthKeysAndValues(t *testing.T) {
 	assert.Equal(t, expected, val)
 }
 
+type interfaceDemo interface {
+	InterfaceMethod() string
+}
+
+type interfaceDemoA struct {
+	IntField   int
+	FloatField float64
+}
+
+// Value Receiver method
+func (d *interfaceDemoA) InterfaceMethod() string {
+	return "interfaceDemoA"
+}
+
+type interfaceDemoB struct {
+}
+
+// Pointer Receiver method
+func (d *interfaceDemoB) InterfaceMethod() string {
+	return "interfaceDemoB"
+}
+
+type interfaceDemoC struct {
+}
+
+// Value Receiver method
+func (d *interfaceDemoC) InterfaceMethod() string {
+	return "interfaceDemoC"
+}
+
+type interfaceDemoD struct {
+}
+
+// Pointer Receiver method
+func (d *interfaceDemoD) InterfaceMethod() string {
+	return "interfaceDemoD"
+}
+
+type interfaceDemoE struct {
+}
+
+// Value Receiver method
+func (d *interfaceDemoE) InterfaceMethod() string {
+	return "interfaceDemoE"
+}
+
+type interfaceDemoF struct {
+}
+
+// Pointer Receiver method
+func (d *interfaceDemoF) InterfaceMethod() string {
+	return "interfaceDemoF"
+}
+
 type methodStruct struct {
 	StringField0 string `fuzz-string-method:"StringOptions"`
 	StringField1 string `fuzz-string-method:"StringOptions"`
@@ -469,6 +523,13 @@ type methodStruct struct {
 	FloatField3 float64 `fuzz-float-method:"FloatOptions"`
 	FloatField4 float64 `fuzz-float-method:"FloatOptions"`
 	FloatField5 float64 `fuzz-float-method:"FloatOptions"`
+	//
+	InterfaceField0 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField1 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField2 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField3 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField4 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField5 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
 }
 
 // Pointer receiver method
@@ -519,6 +580,24 @@ func (s methodStruct) FloatOptions() []float64 {
 	}
 }
 
+// Pointer receiver method
+func (s *methodStruct) InterfaceOptions() []any {
+	return []any{
+		// value receiver method, value type
+		&interfaceDemoA{},
+		// pointer receiver method, pointer type
+		&interfaceDemoB{},
+		// value receiver method, pointer type
+		&interfaceDemoC{},
+		// pointer receiver method, value type
+		&interfaceDemoD{},
+		// value receiver method, value type
+		&interfaceDemoE{},
+		// pointer receiver method, pointer type
+		&interfaceDemoF{},
+	}
+}
+
 func TestFuzzTags_MethodValues(t *testing.T) {
 	c := newByteConsumer([]byte{})
 	// Values for strings
@@ -549,6 +628,16 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	c.pushUint64(3, bytesForNative)
 	c.pushUint64(4, bytesForNative)
 	c.pushUint64(5, bytesForNative)
+	// Values for interfaces
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
+	// Values for interfaceExampleA
+	c.pushInt64(-100, bytesForNative)
+	c.pushFloat64(123.123, bytesForNative)
 
 	val := methodStruct{}
 	Fill(&val, c.getRawBytes())
@@ -580,4 +669,15 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	assert.Equal(t, float64(0.3), val.FloatField3)
 	assert.Equal(t, float64(0.4), val.FloatField4)
 	assert.Equal(t, float64(0.5), val.FloatField5)
+
+	assert.Equal(t, "interfaceDemoA", val.InterfaceField0.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoB", val.InterfaceField1.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoC", val.InterfaceField2.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoD", val.InterfaceField3.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoE", val.InterfaceField4.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoF", val.InterfaceField5.InterfaceMethod())
+
+	demoA := val.InterfaceField0.(*interfaceDemoA)
+	assert.Equal(t, -100, demoA.IntField)
+	assert.Equal(t, 123.123, demoA.FloatField)
 }

@@ -1,6 +1,7 @@
 package fuzzhelper
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -164,9 +165,37 @@ func (v *fillVisitor) visitFunc(value reflect.Value, tags fuzzTags, path valuePa
 	// we still visit them so we can _describe_ that we don't support them
 }
 
-func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
-	// Do nothing - interfaces are simply not supported
-	// we still visit them so we can _describe_ that we don't support them
+func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) bool {
+	if !value.CanSet() {
+		return false
+	}
+
+	if tags.interfaceValues.wasSet {
+		// Choose one of the values from the interfaceValues slice
+		val := c.consumeUint64(bytesForNative)
+		options := tags.interfaceValues.value
+		chosen := options[val%uint64(len(options))]
+
+		ptrType := reflect.ValueOf(chosen).Type()
+
+		// TODO this should really be enforced proactively at the tag processing level
+		// This check can remain, but this error should be caught earlier
+		if ptrType.Kind() != reflect.Pointer {
+			panic(fmt.Errorf("Interface values (at %s) can only be satisfied by pointer types, found %s", path.pathString(reflect.New(ptrType)), ptrType))
+		}
+
+		// Construct new instance of value type
+		newValue := reflect.New(ptrType.Elem())
+
+		if !ptrType.AssignableTo(ptrType) {
+			panic(fmt.Errorf("Interface value at %s cannot be satisfied with type %s", path.pathString(newValue), ptrType))
+		}
+
+		value.Set(newValue)
+		return true
+	}
+
+	return false
 }
 
 func (v *fillVisitor) visitString(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {

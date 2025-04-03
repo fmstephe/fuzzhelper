@@ -193,8 +193,9 @@ func (v *describeVisitor) visitFunc(value reflect.Value, tags fuzzTags, path val
 	notSupported(value, path)
 }
 
-func (v *describeVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
+func (v *describeVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) bool {
 	notSupported(value, path)
+	return false
 }
 
 func (v *describeVisitor) visitString(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {

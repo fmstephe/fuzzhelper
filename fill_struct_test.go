@@ -169,6 +169,29 @@ func TestFill_Map(t *testing.T) {
 	assert.Equal(t, 2, val.MapValue[1].IntField)
 }
 
+func TestFill_Interface(t *testing.T) {
+	type valueStruct struct {
+		IntField int
+	}
+	type testStruct struct {
+		MapValue map[int]valueStruct
+	}
+
+	// Set all the fill values here
+	c := newByteConsumer([]byte{})
+	// map is size 1
+	c.pushUint64(1, bytesForNative)
+	// IntValue field
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+
+	// Test value
+	val := testStruct{}
+	Fill(&val, c.getRawBytes())
+	assert.Equal(t, 1, len(val.MapValue))
+	assert.Equal(t, 2, val.MapValue[1].IntField)
+}
+
 // Test a series of nested structs.
 //
 // This test is very very complex, hard to write - harder to read. It's not

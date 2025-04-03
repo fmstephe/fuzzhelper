@@ -18,7 +18,7 @@ type valueVisitor interface {
 	visitArray(reflect.Value, fuzzTags, valuePath)
 	visitChan(reflect.Value, fuzzTags, valuePath)
 	visitFunc(reflect.Value, fuzzTags, valuePath)
-	visitInterface(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitInterface(reflect.Value, *byteConsumer, fuzzTags, valuePath) bool
 	visitMap(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
 	visitPointer(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitSlice(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
@@ -143,8 +143,13 @@ func visitValue(callback valueVisitor, value reflect.Value, c *byteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Interface:
-		callback.visitInterface(value, c, tags, path)
-		return []visitFunc{}
+		if callback.visitInterface(value, c, tags, path) {
+			return []visitFunc{
+				newVisitFunc(callback, value.Elem(), c, newEmptyFuzzTags(), path.add(value, "(ifc)")),
+			}
+		} else {
+			return []visitFunc{}
+		}
 
 	case reflect.Map:
 		mapLen := callback.visitMap(value, c, tags, path)
@@ -216,13 +221,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *byteConsumer, tag
 			vField := value.Field(i)
 			tField := vType.Field(i)
 			tags := newFuzzTags(value, tField)
-			if vField.CanSet() {
-				newValues = append(newValues, visitValue(callback, vField, c, tags, path.add(value, tField.Name))...)
-			} else {
-				// We visit this unsettable field so we can describe it
-				// It should not be filled and any returned fill functions are ignored
-				visitValue(callback, vField, c, tags, path.add(value, tField.Name))
-			}
+			newValues = append(newValues, visitValue(callback, vField, c, tags, path.add(value, tField.Name))...)
 		}
 
 		return newValues

@@ -286,7 +286,6 @@ type valueTag[T any] struct {
 }
 
 func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag string) valueTag[T] {
-
 	methodName, ok := field.Tag.Lookup(tag)
 	if !ok {
 		//println("no tag found: ", tag, field.Name)
