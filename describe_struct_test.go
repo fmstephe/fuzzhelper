@@ -2,7 +2,7 @@ package fuzzhelper
 
 import "unsafe"
 
-func ExampleDescribe_StringRange() {
+func ExampleDescribe_stringRange() {
 	type testStruct struct {
 		StringField string `fuzz-string-range:"1,5"`
 	}
@@ -25,13 +25,13 @@ func (s *stringMethodStruct) StringValues() []string {
 	}
 }
 
-func ExampleDescribe_StringMethod() {
+func ExampleDescribe_stringMethod() {
 	Describe(&stringMethodStruct{})
 	// Output:*(stringMethodStruct).StringField (string)
 	//	method (StringValues): [first second thi...
 }
 
-func ExampleDescribe_UnexportedString() {
+func ExampleDescribe_unexportedString() {
 	type testStruct struct {
 		//lint:ignore U1000 This field is actually used via reflection
 		unexportedStringField string `fuzz-string-range:"1,5"`
@@ -42,7 +42,7 @@ func ExampleDescribe_UnexportedString() {
 	//	not exported, will ignore
 }
 
-func ExampleDescribe_IntRange() {
+func ExampleDescribe_intRange() {
 	type testStruct struct {
 		IntField int `fuzz-int-range:"-10,50"`
 	}
@@ -65,13 +65,13 @@ func (s *intMethodStruct) IntValues() []int64 {
 	}
 }
 
-func ExampleDescribe_IntMethod() {
+func ExampleDescribe_intMethod() {
 	Describe(&intMethodStruct{})
 	// Output:*(intMethodStruct).IntField (int)
 	//	method (IntValues): [-1 -2 -3 -4]
 }
 
-func ExampleDescribe_UnexportedInt() {
+func ExampleDescribe_unexportedInt() {
 	type testStruct struct {
 		//lint:ignore U1000 This field is actually used via reflection
 		unexportedIntField int `fuzz-int-range:"-10,50"`
@@ -82,7 +82,7 @@ func ExampleDescribe_UnexportedInt() {
 	//	not exported, will ignore
 }
 
-func ExampleDescribe_UintRange() {
+func ExampleDescribe_uintRange() {
 	type testStruct struct {
 		UintField uint `fuzz-uint-range:"2,7"`
 	}
@@ -105,13 +105,13 @@ func (s *uintMethodStruct) UintValues() []uint64 {
 	}
 }
 
-func ExampleDescribe_UintMethod() {
+func ExampleDescribe_uintMethod() {
 	Describe(&uintMethodStruct{})
 	// Output:*(uintMethodStruct).UintField (uint)
 	//	method (UintValues): [1 2 3 4]
 }
 
-func ExampleDescribe_UnexportedUint() {
+func ExampleDescribe_unexportedUint() {
 	type testStruct struct {
 		//lint:ignore U1000 This field is actually used via reflection
 		unexportedUintField uint `fuzz-uint-range:"2,7"`
@@ -122,7 +122,7 @@ func ExampleDescribe_UnexportedUint() {
 	//	not exported, will ignore
 }
 
-func ExampleDescribe_FloatRange() {
+func ExampleDescribe_floatRange() {
 	type testStruct struct {
 		FloatField float64 `fuzz-float-range:"0.1,0.5"`
 	}
@@ -145,13 +145,13 @@ func (s *float64MethodStruct) FloatValues() []float64 {
 	}
 }
 
-func ExampleDescribe_FloatMethod() {
+func ExampleDescribe_floatMethod() {
 	Describe(&float64MethodStruct{})
 	// Output:*(float64MethodStruct).FloatField (float64)
 	//	method (FloatValues): [0.01 0.02 0.03 0...
 }
 
-func ExampleDescribe_UnexportedFloat() {
+func ExampleDescribe_unexportedFloat() {
 	type testStruct struct {
 		//lint:ignore U1000 This field is actually used via reflection
 		unexportedFloatField float64 `fuzz-float-range:"0.1,0.5"`
@@ -162,7 +162,7 @@ func ExampleDescribe_UnexportedFloat() {
 	//	not exported, will ignore
 }
 
-func ExampleDescribe_SliceRange() {
+func ExampleDescribe_sliceRange() {
 	type testStruct struct {
 		SliceField []float64 `fuzz-slice-range:"3,20" fuzz-float-range:"0.2,0.7"`
 	}
@@ -174,7 +174,7 @@ func ExampleDescribe_SliceRange() {
 	//	range min: 0.2 max: 0.7
 }
 
-func ExampleDescribe_Array() {
+func ExampleDescribe_array() {
 	type testStruct struct {
 		ArrayField [4]uint64 `fuzz-uint-range:"6,100"`
 	}
@@ -191,7 +191,7 @@ func ExampleDescribe_Array() {
 	//	range min: 6 max: 100
 }
 
-func ExampleDescribe_MapRange() {
+func ExampleDescribe_mapRange() {
 	type testStruct struct {
 		MapField map[int64]float64 `fuzz-map-range:"3,20" fuzz-float-range:"0.2,0.7" fuzz-int-range:"5,10"`
 	}
@@ -225,7 +225,7 @@ type childStruct struct {
 	StringField string
 }
 
-func ExampleDescribe_StructInStruct() {
+func ExampleDescribe_structInStruct() {
 	// Take careful note that because we defer processing of pointer
 	// values, i.e. PointerChild and PointerPointerChild The value fields,
 	// unexportedChild and ValueChild will be processed first, and
@@ -249,7 +249,7 @@ func ExampleDescribe_StructInStruct() {
 	//	range min: 0 max: 20
 }
 
-func ExampleDescribe_UnsupportedTypes() {
+func ExampleDescribe_unsupportedTypes() {
 	type testStruct struct {
 		ChanField          chan int
 		InterfaceField     any
@@ -274,7 +274,7 @@ func ExampleDescribe_UnsupportedTypes() {
 	//	not supported, will ignore
 }
 
-func ExampleDescribe_RecursiveType() {
+func ExampleDescribe_recursiveType() {
 	type testStruct struct {
 		IntField        int64
 		RecursiveField1 **testStruct
@@ -293,7 +293,7 @@ func ExampleDescribe_RecursiveType() {
 	//	Recursion...
 }
 
-func ExampleDescribe_RootSlice() {
+func ExampleDescribe_rootSlice() {
 	type testStruct struct {
 		IntField int64
 	}
