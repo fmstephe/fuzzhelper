@@ -3,6 +3,7 @@ package fuzzhelper
 import (
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 var _ valueVisitor = &fillVisitor{}
@@ -14,12 +15,8 @@ func Fill(root any, bytes []byte) {
 	visitRoot(&fillVisitor{}, root, newByteConsumer(bytes))
 }
 
-func (v *fillVisitor) canGrowRootSlice() bool {
-	return true
-}
-
 func (v *fillVisitor) visitBool(value reflect.Value, c *byteConsumer, _ fuzzTags, path valuePath) {
-	//print(leftPad(len(path)))
+	//print(leftPad(len(path.names)))
 	//print("bool")
 	if !value.CanSet() {
 		return
@@ -30,7 +27,7 @@ func (v *fillVisitor) visitBool(value reflect.Value, c *byteConsumer, _ fuzzTags
 }
 
 func (v *fillVisitor) visitInt(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
-	//print(leftPad(len(path)))
+	//print(leftPad(len(path.names)))
 	//print("int")
 	if !value.CanSet() {
 		return
@@ -51,7 +48,7 @@ func (v *fillVisitor) visitInt(value reflect.Value, c *byteConsumer, tags fuzzTa
 }
 
 func (v *fillVisitor) visitUint(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
-	//print(leftPad(len(path)))
+	//print(leftPad(len(path.names)))
 	//print("uint")
 	if !value.CanSet() {
 		return
@@ -72,12 +69,12 @@ func (v *fillVisitor) visitUint(value reflect.Value, c *byteConsumer, tags fuzzT
 }
 
 func (v *fillVisitor) visitUintptr(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
-	//print(leftPad(len(path)))
+	//print(leftPad(len(path.names)))
 	//println("uintptr: ignored")
 }
 
 func (v *fillVisitor) visitFloat(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) {
-	//print(leftPad(len(path)))
+	//print(leftPad(len(path.names)))
 	//print("float")
 	if !value.CanSet() {
 		return
@@ -108,7 +105,7 @@ func (v *fillVisitor) visitArray(value reflect.Value, tags fuzzTags, path valueP
 }
 
 func (v *fillVisitor) visitPointer(value reflect.Value, c *byteConsumer, _ fuzzTags, path valuePath) {
-	//print(leftPad(len(path)))
+	//print(leftPad(len(path.names)))
 	//print("pointer")
 	if !value.CanSet() {
 		return
@@ -144,15 +141,15 @@ func (v *fillVisitor) visitSlice(value reflect.Value, c *byteConsumer, tags fuzz
 }
 
 func (v *fillVisitor) visitMap(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
-	//print(leftPad(len(path)))
-	val := int(c.consumeInt64(bytesForNative))
-	mapLen := tags.mapRange.fit(val)
-
-	//print("map ", mapLen)
+	//print(leftPad(len(path.names)))
 	if !value.CanSet() {
 		return 0
 	}
 
+	val := int(c.consumeInt64(bytesForNative))
+	mapLen := tags.mapRange.fit(val)
+
+	//print("map ", mapLen)
 	mapType := value.Type()
 	newMap := reflect.MakeMapWithSize(mapType, mapLen)
 	value.Set(newMap)
@@ -233,4 +230,8 @@ func (v *fillVisitor) visitStruct(value reflect.Value, tags fuzzTags, path value
 func (v *fillVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, path valuePath) {
 	// Do nothing - unsafe pointers are simply not supported
 	// we still visit them so we can _describe_ that we don't support them
+}
+
+func leftPad(l int) string {
+	return strings.Repeat(" ", l)
 }

@@ -175,7 +175,7 @@ func (r *uintTagRange) fit(val uint64) uint64 {
 	}
 
 	fitted := (val % spread) + r.uintMin
-	//pruintln("uint val fitted", val, r.uintMin, r.uintMax, fitted)
+	//println("uint val fitted", val, r.uintMin, r.uintMax, fitted)
 
 	return fitted
 }

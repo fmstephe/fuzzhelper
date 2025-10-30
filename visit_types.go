@@ -8,7 +8,6 @@ import (
 type visitFunc func() []visitFunc
 
 type valueVisitor interface {
-	canGrowRootSlice() bool
 	visitBool(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitInt(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitUint(reflect.Value, *byteConsumer, fuzzTags, valuePath)
@@ -51,37 +50,6 @@ func visitRoot(callback valueVisitor, root any, c *byteConsumer) {
 	*/
 
 	//println("")
-}
-
-func isPointerToSlice(value reflect.Value) bool {
-	return value.Kind() == reflect.Pointer && value.Elem().Kind() == reflect.Slice
-}
-
-func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *byteConsumer, path valuePath) {
-	path = path.add(pointerVal, "*")
-
-	sliceVal := pointerVal.Elem()
-	sliceType := sliceVal.Type().Elem()
-
-	// Fill up the slice with all the available data
-	for i := 0; c.len() > 0; i++ {
-		// Create a new element for the slice
-		pathName := fmt.Sprintf("[%d]", i)
-		newVal := reflect.New(sliceType).Elem()
-
-		// Fill in that new element with data
-		visitBreadthFirst(callback, newVal, c, path.add(sliceVal, pathName))
-
-		// Append the new element to the slice
-		sliceVal.Set(reflect.Append(sliceVal, newVal))
-
-		if !callback.canGrowRootSlice() {
-			// If we don't make this check then the describer will
-			// be unable to stop this slice from growing
-			// indefinitely
-			break
-		}
-	}
 }
 
 func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *byteConsumer, path valuePath) {
