@@ -21,7 +21,7 @@ type valueVisitor interface {
 	visitInterface(reflect.Value, *byteConsumer, fuzzTags, valuePath) bool
 	visitMap(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
 	visitPointer(reflect.Value, *byteConsumer, fuzzTags, valuePath)
-	visitSlice(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
+	visitSlice(reflect.Value, *byteConsumer, fuzzTags, valuePath) (from, to int)
 	visitString(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitStruct(reflect.Value, fuzzTags, valuePath) bool
 	visitUnsafePointer(reflect.Value, fuzzTags, valuePath)
@@ -40,11 +40,15 @@ func visitRoot(callback valueVisitor, root any, c *byteConsumer) {
 	rootVal := reflect.ValueOf(root)
 
 	path := valuePath{}
-	if isPointerToSlice(rootVal) {
-		visitRootSlice(callback, rootVal, c, path)
-	} else {
-		visitBreadthFirst(callback, rootVal, c, path)
-	}
+	visitBreadthFirst(callback, rootVal, c, path)
+
+	/*
+		if isPointerToSlice(rootVal) {
+			visitRootSlice(callback, rootVal, c, path)
+		} else {
+			visitBreadthFirst(callback, rootVal, c, path)
+		}
+	*/
 
 	//println("")
 }
@@ -188,13 +192,29 @@ func visitValue(callback valueVisitor, value reflect.Value, c *byteConsumer, tag
 		}
 
 	case reflect.Slice:
-		sliceLen := callback.visitSlice(value, c, tags, path)
+		from, to := callback.visitSlice(value, c, tags, path)
 
+		// Add a single element to the slice (which should be non-nil now)
 		newValues := []visitFunc{}
-		for i := range sliceLen {
+
+		if !value.CanSet() {
+			return newValues
+		}
+
+		// Fill in all elements.
+		for i := from; i < to; i++ {
 			pathVal := fmt.Sprintf("[%d]", i)
 			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, path.add(value, pathVal))...)
 		}
+
+		if !tags.sliceRange.uintRange.wasSet && from != to {
+			// This slice has an unbounded size.  Create a
+			// recursive callback to this slice, to allow more
+			// elements to be appended to the slice if there is
+			// enough data
+			newValues = append(newValues, newVisitFunc(callback, value, c, tags, path))
+		}
+
 		return newValues
 
 	case reflect.String:

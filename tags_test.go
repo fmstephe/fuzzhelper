@@ -261,11 +261,8 @@ func TestFuzzTags_SliceLength(t *testing.T) {
 	}
 
 	c := newByteConsumer([]byte{})
-	// Create slice of size 3
-	c.pushInt64(3, bytesForNative)
+	// First slice is recursively built until we run out of data
 	c.pushInt64(1, bytesForNative)
-	c.pushInt64(2, bytesForNative)
-	c.pushInt64(3, bytesForNative)
 
 	// Create a slice of size 1, the length value consumed will be 4, but
 	// the length min/max forces the size to 1
@@ -279,6 +276,10 @@ func TestFuzzTags_SliceLength(t *testing.T) {
 	c.pushInt64(2, bytesForNative)
 	c.pushInt64(3, bytesForNative)
 	c.pushInt64(4, bytesForNative)
+
+	// After building the other slices, we add more data to continue building the first (unbounded) slice
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
 
 	expected := testStruct{
 		DefaultSlice: []int{1, 2, 3},
@@ -446,8 +447,8 @@ type interfaceDemo interface {
 }
 
 type interfaceDemoA struct {
-	IntField   int
-	FloatField float64
+	IntField     int
+	Float64Field float64
 }
 
 // Value Receiver method
@@ -679,5 +680,5 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 
 	demoA := val.InterfaceField0.(*interfaceDemoA)
 	assert.Equal(t, -100, demoA.IntField)
-	assert.Equal(t, 123.123, demoA.FloatField)
+	assert.Equal(t, 123.123, demoA.Float64Field)
 }
