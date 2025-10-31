@@ -121,23 +121,28 @@ func (v *fillVisitor) visitPointer(value reflect.Value, c *byteConsumer, _ fuzzT
 	value.Set(newVal)
 }
 
-func (v *fillVisitor) visitSlice(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
-	//print(leftPad(len(path)))
-	val := int(c.consumeInt64(bytesForNative))
-	sliceLen := tags.sliceRange.fit(val)
-
-	//print("slice ", sliceLen)
+func (v *fillVisitor) visitSlice(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) (from, to int) {
+	//print(leftPad(len(path.names)))
 	if !value.CanSet() {
-		return 0
+		return 0, 0
 	}
 
-	newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
-	value.Set(newSlice)
+	initialLen := value.Len()
 
-	return sliceLen
+	appendSize := 1
+	if tags.sliceRange.uintRange.wasSet {
+		// If we have a size range, use that to determine appendSize
+		val := int(c.consumeInt64(bytesForNative))
+		appendSize = tags.sliceRange.fit(val)
+	}
+
+	toAppend := reflect.MakeSlice(value.Type(), appendSize, appendSize)
+	value.Set(reflect.AppendSlice(value, toAppend))
+
+	//print("slice ", sliceLen)
+	return initialLen, value.Len()
 }
 
-// TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
 func (v *fillVisitor) visitMap(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
 	//print(leftPad(len(path)))
 	val := int(c.consumeInt64(bytesForNative))

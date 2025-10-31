@@ -37,9 +37,9 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	t.intRange = newIntTagRange(field, "fuzz-int-range")
 	t.uintRange = newUintTagRange(field, "fuzz-uint-range")
 	t.floatRange = newFloatTagRange(field, "fuzz-float-range")
-	t.sliceRange = newLengthTagRange(field, "fuzz-slice-range", defaultLengthMin, defaultLengthMax)
-	t.stringRange = newLengthTagRange(field, "fuzz-string-range", defaultLengthMin, defaultLengthMax)
-	t.mapRange = newLengthTagRange(field, "fuzz-map-range", defaultLengthMin, defaultLengthMax)
+	t.stringRange = newLengthTagRangeWithDefault(field, "fuzz-string-range", defaultLengthMin, defaultLengthMax)
+	t.sliceRange = newLengthTagRange(field, "fuzz-slice-range")
+	t.mapRange = newLengthTagRangeWithDefault(field, "fuzz-map-range", defaultLengthMin, defaultLengthMax)
 
 	t.intValues = newValueTag[[]int64](structVal, field, "fuzz-int-method")
 	t.uintValues = newValueTag[[]uint64](structVal, field, "fuzz-uint-method")
@@ -184,10 +184,8 @@ type lengthTagRange struct {
 	uintRange uintTagRange
 }
 
-func newLengthTagRange(field reflect.StructField, tag string, defaultMin, defaultMax uint64) lengthTagRange {
-	r := lengthTagRange{
-		uintRange: newUintTagRange(field, tag),
-	}
+func newLengthTagRangeWithDefault(field reflect.StructField, tag string, defaultMin, defaultMax uint64) lengthTagRange {
+	r := newLengthTagRange(field, tag)
 	if !r.uintRange.wasSet {
 		r.uintRange = uintTagRange{
 			wasSet:  true,
@@ -197,6 +195,12 @@ func newLengthTagRange(field reflect.StructField, tag string, defaultMin, defaul
 	}
 
 	return r
+}
+
+func newLengthTagRange(field reflect.StructField, tag string) lengthTagRange {
+	return lengthTagRange{
+		uintRange: newUintTagRange(field, tag),
+	}
 }
 
 func (r *lengthTagRange) fit(val int) int {

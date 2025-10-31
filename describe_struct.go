@@ -149,34 +149,38 @@ func (v *describeVisitor) visitPointer(value reflect.Value, c *byteConsumer, tag
 	value.Set(newVal)
 }
 
-func (v *describeVisitor) visitSlice(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
+func (v *describeVisitor) visitSlice(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) (from, to int) {
+	if value.Len() != 0 {
+		// This slice has already been set, we are building it
+		// recursively with unbounded size. In Describe we stop after
+		// the first iteration.
+		return 0, 0
+	}
+
 	introDescription(value, tags, path)
 
 	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.sliceRange.uintRange.uintMin, tags.sliceRange.uintRange.uintMax)
 
-	sliceLen := 1
-
 	if !value.CanSet() {
-		return 0
+		return 0, 0
 	}
 
-	newSlice := reflect.MakeSlice(value.Type(), sliceLen, sliceLen)
+	newSlice := reflect.MakeSlice(value.Type(), 1, 1)
 	value.Set(newSlice)
 
-	return sliceLen
+	return 0, 1
 }
 
-// TODO there is a bug here where if the map cannot be set but is non-nil this function will try to set it
 func (v *describeVisitor) visitMap(value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) int {
 	introDescription(value, tags, path)
 
 	fmt.Fprintf(os.Stdout, "\trange min: %d max: %d\n", tags.mapRange.uintRange.uintMin, tags.mapRange.uintRange.uintMax)
 
-	mapLen := 1
-
 	if !value.CanSet() {
 		return 0
 	}
+
+	mapLen := 1
 
 	mapType := value.Type()
 	newMap := reflect.MakeMapWithSize(mapType, mapLen)

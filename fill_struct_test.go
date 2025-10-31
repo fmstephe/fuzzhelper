@@ -129,12 +129,9 @@ func buildSimpleTestByteConsumer() *byteConsumer {
 	c.pushInt64(-5, bytesForNative)
 
 	// SliceValue Size
-	c.pushUint64(4, bytesForNative)
-	// SliceValue Elements
+	//c.pushUint64(4, bytesForNative)
+	// SliceValue First Element
 	c.pushUint64(2, bytesForNative)
-	c.pushUint64(3, bytesForNative)
-	c.pushUint64(4, bytesForNative)
-	c.pushUint64(5, bytesForNative)
 
 	// Map Size
 	c.pushInt64(1, bytesForNative)
@@ -142,6 +139,11 @@ func buildSimpleTestByteConsumer() *byteConsumer {
 	c.pushString("map key string")
 	// MapValue map entry
 	c.pushFloat64(5.1415, bytesFor64)
+
+	// SliceValue remaining elements
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
 
 	return c
 }
@@ -169,6 +171,8 @@ func TestFill_Map(t *testing.T) {
 	assert.Equal(t, 2, val.MapValue[1].IntField)
 }
 
+// TODO this test is a copy/paste of TestFill_Map above
+// Needs to actually test interfaces
 func TestFill_Interface(t *testing.T) {
 	type valueStruct struct {
 		IntField int
