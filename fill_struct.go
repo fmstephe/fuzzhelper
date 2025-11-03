@@ -178,6 +178,9 @@ func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags 
 		options := tags.interfaceValues.value
 		chosen := options[val%uint64(len(options))]
 
+		// Use the chosen value (an actual object we use only as an
+		// example) and extract its type so we can build a new instance
+		// of it
 		ptrType := reflect.ValueOf(chosen).Type()
 
 		if ptrType.Kind() != reflect.Pointer {
@@ -187,7 +190,7 @@ func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags 
 		// Construct new instance of value type
 		newValue := reflect.New(ptrType.Elem())
 
-		if !ptrType.AssignableTo(ptrType) {
+		if !ptrType.AssignableTo(value.Type()) {
 			panic(fmt.Errorf("Interface value at %s cannot be satisfied with type %s", path.pathString(newValue), ptrType))
 		}
 
