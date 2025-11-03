@@ -101,10 +101,16 @@ func (r *intTagRange) fit(val int64) int64 {
 		return val
 	}
 
-	spread := (r.intMax - r.intMin) + 1
-	if spread <= 0 {
+	if r.intMax == r.intMin {
+		// If min/max are the same the value is clamped to that value
+		return r.intMax
+	}
+
+	if r.intMax <= r.intMin {
+		// Our min/max values are incorrectly set up
 		return val
 	}
+	spread := (r.intMax - r.intMin) + 1
 
 	fitted := (absInt(val) % spread) + r.intMin
 	//println("int val fitted", val, r.intMin, r.intMax, fitted)
@@ -170,10 +176,16 @@ func (r *uintTagRange) fit(val uint64) uint64 {
 		return val
 	}
 
-	spread := (r.uintMax - r.uintMin) + 1
-	if spread <= 0 {
+	if r.uintMax == r.uintMin {
+		// If min/max are the same the value is clamped to that value
+		return r.uintMax
+	}
+
+	if r.uintMax <= r.uintMin {
+		// Our min/max values are incorrectly set up
 		return val
 	}
+	spread := (r.uintMax - r.uintMin) + 1
 
 	fitted := (val % spread) + r.uintMin
 	//println("uint val fitted", val, r.uintMin, r.uintMax, fitted)
@@ -258,10 +270,16 @@ func (r *floatTagRange) fit(val float64) float64 {
 		return val
 	}
 
-	spread := (r.floatMax - r.floatMin)
-	if spread <= 0 {
+	if r.floatMax == r.floatMin {
+		// If min/max are the same the value is clamped to that value
+		return r.floatMax
+	}
+
+	if r.floatMax <= r.floatMin {
+		// Our min/max values are incorrectly set up
 		return val
 	}
+	spread := (r.floatMax - r.floatMin)
 
 	// If val is not-a-number then just take the mid-point between min and max
 	if math.IsNaN(val) {
