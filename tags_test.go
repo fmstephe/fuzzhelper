@@ -582,8 +582,8 @@ func (s methodStruct) FloatOptions() []float64 {
 }
 
 // Pointer receiver method
-func (s *methodStruct) InterfaceOptions() []any {
-	return []any{
+func (s *methodStruct) InterfaceOptions() []interfaceDemo {
+	return []interfaceDemo{
 		// value receiver method, value type
 		&interfaceDemoA{},
 		// pointer receiver method, pointer type

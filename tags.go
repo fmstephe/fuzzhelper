@@ -1,6 +1,7 @@
 package fuzzhelper
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"strconv"
@@ -22,11 +23,11 @@ type fuzzTags struct {
 	stringRange lengthTagRange
 	mapRange    lengthTagRange
 
-	intValues       valueTag[[]int64]
-	uintValues      valueTag[[]uint64]
-	floatValues     valueTag[[]float64]
-	stringValues    valueTag[[]string]
-	interfaceValues valueTag[[]any]
+	intValues       methodTag[[]int64]
+	uintValues      methodTag[[]uint64]
+	floatValues     methodTag[[]float64]
+	stringValues    methodTag[[]string]
+	interfaceValues methodTag[[]any]
 }
 
 func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
@@ -41,11 +42,11 @@ func newFuzzTags(structVal reflect.Value, field reflect.StructField) fuzzTags {
 	t.sliceRange = newLengthTagRange(field, "fuzz-slice-range")
 	t.mapRange = newLengthTagRangeWithDefault(field, "fuzz-map-range", defaultLengthMin, defaultLengthMax)
 
-	t.intValues = newValueTag[[]int64](structVal, field, "fuzz-int-method")
-	t.uintValues = newValueTag[[]uint64](structVal, field, "fuzz-uint-method")
-	t.floatValues = newValueTag[[]float64](structVal, field, "fuzz-float-method")
-	t.stringValues = newValueTag[[]string](structVal, field, "fuzz-string-method")
-	t.interfaceValues = newValueTag[[]any](structVal, field, "fuzz-interface-method")
+	t.intValues = newMethodTag[int64](structVal, field, "fuzz-int-method")
+	t.uintValues = newMethodTag[uint64](structVal, field, "fuzz-uint-method")
+	t.floatValues = newMethodTag[float64](structVal, field, "fuzz-float-method")
+	t.stringValues = newMethodTag[string](structVal, field, "fuzz-string-method")
+	t.interfaceValues = newMethodTag[any](structVal, field, "fuzz-interface-method")
 
 	return t
 }
@@ -283,17 +284,17 @@ func (r *floatTagRange) fit(val float64) float64 {
 	return fitted
 }
 
-type valueTag[T any] struct {
+type methodTag[T any] struct {
 	wasSet     bool
 	methodName string
 	value      T
 }
 
-func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag string) valueTag[T] {
+func newMethodTag[T any](structVal reflect.Value, field reflect.StructField, tag string) methodTag[[]T] {
 	methodName, ok := field.Tag.Lookup(tag)
 	if !ok {
 		//println("no tag found: ", tag, field.Name)
-		return valueTag[T]{
+		return methodTag[[]T]{
 			wasSet:     false,
 			methodName: methodName,
 		}
@@ -301,7 +302,7 @@ func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag 
 
 	if !isExported(methodName) {
 		//println("method is not exported, can't be called: ", methodName, field.Name, structVal.Type().String())
-		return valueTag[T]{
+		return methodTag[[]T]{
 			wasSet:     false,
 			methodName: methodName,
 		}
@@ -314,7 +315,7 @@ func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag 
 		method = structVal.MethodByName(methodName)
 		if !method.IsValid() {
 			//println("no method found: ", methodName, field.Name, structVal.Type().String())
-			return valueTag[T]{
+			return methodTag[[]T]{
 				wasSet:     false,
 				methodName: methodName,
 			}
@@ -324,7 +325,7 @@ func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag 
 	methodType := method.Type()
 	if methodType.NumIn() != 0 {
 		//println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
-		return valueTag[T]{
+		return methodTag[[]T]{
 			wasSet:     false,
 			methodName: methodName,
 		}
@@ -332,26 +333,42 @@ func newValueTag[T any](structVal reflect.Value, field reflect.StructField, tag 
 
 	if methodType.NumOut() != 1 {
 		//println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
-		return valueTag[T]{
+		return methodTag[[]T]{
 			wasSet:     false,
 			methodName: methodName,
 		}
 	}
 
-	returnType := methodType.Out(0)
-	if returnType != reflect.TypeFor[T]() {
-		//println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
-		return valueTag[T]{
-			wasSet:     false,
-			methodName: methodName,
-		}
-	}
+	/*
+		returnType := methodType.Out(0)
+			if returnType != reflect.TypeFor[T]() {
+				//println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
+				return methodTag[[]T]{
+					wasSet:     false,
+					methodName: methodName,
+				}
+			}
+	*/
 
 	result := method.Call([]reflect.Value{})
 
-	return valueTag[T]{
+	return methodTag[[]T]{
 		wasSet:     true,
 		methodName: methodName,
-		value:      result[0].Interface().(T),
+		value:      copyToTypedSlice[T](result[0]),
 	}
+}
+
+func copyToTypedSlice[T any](src reflect.Value) []T {
+	if src.Kind() != reflect.Slice {
+		panic(fmt.Errorf("expected slice kind, got %s", src.Kind().String()))
+	}
+
+	result := make([]T, src.Len())
+
+	for i := range result {
+		result[i] = src.Index(i).Interface().(T)
+	}
+
+	return result
 }

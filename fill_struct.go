@@ -180,8 +180,6 @@ func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags 
 
 		ptrType := reflect.ValueOf(chosen).Type()
 
-		// TODO this should really be enforced proactively at the tag processing level
-		// This check can remain, but this error should be caught earlier
 		if ptrType.Kind() != reflect.Pointer {
 			panic(fmt.Errorf("Interface values (at %s) can only be satisfied by pointer types, found %s", path.pathString(reflect.New(ptrType)), ptrType))
 		}
