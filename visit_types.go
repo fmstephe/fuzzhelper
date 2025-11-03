@@ -41,14 +41,6 @@ func visitRoot(callback valueVisitor, root any, c *byteConsumer) {
 	path := valuePath{}
 	visitBreadthFirst(callback, rootVal, c, path)
 
-	/*
-		if isPointerToSlice(rootVal) {
-			visitRootSlice(callback, rootVal, c, path)
-		} else {
-			visitBreadthFirst(callback, rootVal, c, path)
-		}
-	*/
-
 	//println("")
 }
 
