@@ -45,7 +45,7 @@ func visitRoot(callback valueVisitor, root any, c *byteConsumer) {
 }
 
 func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *byteConsumer, path valuePath) {
-	values := newDequeue[visitFunc]()
+	values := newDeque[visitFunc]()
 
 	visitFuncs := visitValue(callback, value, c, newEmptyFuzzTags(), path)
 	values.addMany(visitFuncs)
