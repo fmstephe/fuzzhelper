@@ -187,14 +187,14 @@ func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags 
 		// when processing the tags, but we leave it here to sleep
 		// better.
 		if ptrType.Kind() != reflect.Pointer {
-			panic(fmt.Errorf("Interface values (at %s) can only be satisfied by pointer types, found %s", path.pathString(reflect.New(ptrType)), ptrType))
+			panic(fmt.Errorf("interface values (at %s) can only be satisfied by pointer types, found %s", path.pathString(reflect.New(ptrType)), ptrType))
 		}
 
 		// Construct new instance of value type
 		newValue := reflect.New(ptrType.Elem())
 
 		if !ptrType.AssignableTo(value.Type()) {
-			panic(fmt.Errorf("Interface value at %s cannot be satisfied with type %s", path.pathString(newValue), ptrType))
+			panic(fmt.Errorf("interface value at %s cannot be satisfied with type %s", path.pathString(newValue), ptrType))
 		}
 
 		value.Set(newValue)
@@ -236,6 +236,7 @@ func (v *fillVisitor) visitUnsafePointer(value reflect.Value, tags fuzzTags, pat
 	// we still visit them so we can _describe_ that we don't support them
 }
 
+//lint:ignore U1000 This method is used if we uncomment the debug printlns
 func leftPad(l int) string {
 	return strings.Repeat(" ", l)
 }

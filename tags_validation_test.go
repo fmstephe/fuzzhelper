@@ -107,6 +107,7 @@ type badMethodNotExported struct {
 	IntField int `fuzz-interface-method:"intOptions"`
 }
 
+//lint:ignore U1000 This method is found via reflection
 func (b badMethodNotExported) intOptions() []int {
 	return []int{1, 2, 3}
 }

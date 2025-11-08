@@ -189,7 +189,7 @@ func (s typeConversionStruct) FloatOptions32() []float32 {
 // Value receiver method
 func (s typeConversionStruct) FloatOptions64() []float64 {
 	return []float64{
-		-0.0,
+		0.0,
 		-0.1,
 		-0.2,
 		-0.3,

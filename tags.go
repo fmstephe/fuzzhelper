@@ -433,6 +433,6 @@ func assign(value, dest reflect.Value) {
 	case reflect.Interface:
 		dest.Set(reflect.ValueOf(value.Interface()))
 	default:
-		panic(fmt.Errorf("Unsupported assignment found: %s", dest.Kind()))
+		panic(fmt.Errorf("unsupported assignment found: %s", dest.Kind()))
 	}
 }
