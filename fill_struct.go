@@ -183,6 +183,9 @@ func (v *fillVisitor) visitInterface(value reflect.Value, c *byteConsumer, tags 
 		// of it
 		ptrType := reflect.ValueOf(chosen).Type()
 
+		// NB: This check should be redundant as we validate the values
+		// when processing the tags, but we leave it here to sleep
+		// better.
 		if ptrType.Kind() != reflect.Pointer {
 			panic(fmt.Errorf("Interface values (at %s) can only be satisfied by pointer types, found %s", path.pathString(reflect.New(ptrType)), ptrType))
 		}

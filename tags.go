@@ -320,11 +320,9 @@ func newMethodTag[T any](structVal reflect.Value, field reflect.StructField, tag
 
 	if !isExported(methodName) {
 		//println("method is not exported, can't be called: ", methodName, field.Name, structVal.Type().String())
-		return methodTag[[]T]{
-			wasSet:     false,
-			methodName: methodName,
-		}
+		panic(fmt.Errorf("%s.%s() is not exported and can't be called", structVal.Type(), methodName))
 	}
+
 	// Try to get the method from the struct
 	// We look for pointer receiver method first, then value receivers
 	// We it in this order under the assumption that people usually use pointer receivers
@@ -332,42 +330,20 @@ func newMethodTag[T any](structVal reflect.Value, field reflect.StructField, tag
 	if !method.IsValid() {
 		method = structVal.MethodByName(methodName)
 		if !method.IsValid() {
-			//println("no method found: ", methodName, field.Name, structVal.Type().String())
-			return methodTag[[]T]{
-				wasSet:     false,
-				methodName: methodName,
-			}
+			panic(fmt.Errorf("%s.%s() could not be found and can't be called", structVal.Type(), methodName))
 		}
 	}
 
 	methodType := method.Type()
 	if methodType.NumIn() != 0 {
-		//println(fmt.Sprintf("expected method with no args, method requires %d args", method.Type().NumIn()), methodName, field.Name)
-		return methodTag[[]T]{
-			wasSet:     false,
-			methodName: methodName,
-		}
+		panic(fmt.Errorf("%s.%s() has arguments (found %d), must have no arguments", structVal.Type(), methodName, methodType.NumIn()))
 	}
 
 	if methodType.NumOut() != 1 {
-		//println(fmt.Sprintf("expected method returning 1 value, method returns %d value(s)", method.Type().NumOut()), methodName, field.Name)
-		return methodTag[[]T]{
-			wasSet:     false,
-			methodName: methodName,
-		}
+		panic(fmt.Errorf("%s.%s() does not return a single value (found %d), must return a single value", structVal.Type(), methodName, methodType.NumOut()))
 	}
 
-	/*
-		returnType := methodType.Out(0)
-			if returnType != reflect.TypeFor[T]() {
-				//println(fmt.Sprintf("expected method returning %s, method returns %s", reflect.TypeFor[T](), returnType), methodName, field.Name)
-				return methodTag[[]T]{
-					wasSet:     false,
-					methodName: methodName,
-				}
-			}
-	*/
-
+	// Get the results from the method call
 	result := method.Call([]reflect.Value{})
 
 	// Convert to a slice typed []T - and ensure that every value in the slice can be assigned to the target field

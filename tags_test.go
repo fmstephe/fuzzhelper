@@ -682,3 +682,42 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	assert.Equal(t, -100, demoA.IntField)
 	assert.Equal(t, 123.123, demoA.Float64Field)
 }
+
+type exoticFloatValues struct {
+	Float64Field1 float64 `fuzz-float-method:"FloatOptions64"`
+	Float64Field2 float64 `fuzz-float-method:"FloatOptions64"`
+	Float64Field3 float64 `fuzz-float-method:"FloatOptions64"`
+	Float32Field1 float32 `fuzz-float-method:"FloatOptions32"`
+	Float32Field2 float32 `fuzz-float-method:"FloatOptions32"`
+	Float32Field3 float32 `fuzz-float-method:"FloatOptions32"`
+}
+
+func (e exoticFloatValues) FloatOptions64() []float64 {
+	return []float64{math.NaN(), math.Inf(1), math.Inf(-1)}
+}
+
+func (e exoticFloatValues) FloatOptions32() []float32 {
+	return []float32{float32(math.NaN()), float32(math.Inf(1)), float32(math.Inf(-1))}
+}
+
+func TestFuzzTags_ExoticFloatValues(t *testing.T) {
+	c := newByteConsumer([]byte{})
+	// choose all float64 values
+	c.pushInt64(0, bytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	// choose all float32 values
+	c.pushInt64(0, bytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+
+	e := &exoticFloatValues{}
+	Fill(e, c.getRawBytes())
+
+	assert.True(t, math.IsNaN(e.Float64Field1))
+	assert.True(t, math.IsInf(e.Float64Field2, 1))
+	assert.True(t, math.IsInf(e.Float64Field3, -1))
+	assert.True(t, math.IsNaN(float64(e.Float32Field1)))
+	assert.True(t, math.IsInf(float64(e.Float32Field2), 1))
+	assert.True(t, math.IsInf(float64(e.Float32Field3), -1))
+}
