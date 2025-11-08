@@ -504,26 +504,26 @@ type methodStruct struct {
 	StringField4 string `fuzz-string-method:"StringOptions"`
 	StringField5 string `fuzz-string-method:"StringOptions"`
 	//
-	IntField0 int64 `fuzz-int-method:"IntOptions"`
-	IntField1 int64 `fuzz-int-method:"IntOptions"`
-	IntField2 int64 `fuzz-int-method:"IntOptions"`
-	IntField3 int64 `fuzz-int-method:"IntOptions"`
-	IntField4 int64 `fuzz-int-method:"IntOptions"`
-	IntField5 int64 `fuzz-int-method:"IntOptions"`
+	IntField0 int32 `fuzz-int-method:"IntOptions"`
+	IntField1 int32 `fuzz-int-method:"IntOptions"`
+	IntField2 int32 `fuzz-int-method:"IntOptions"`
+	IntField3 int32 `fuzz-int-method:"IntOptions"`
+	IntField4 int32 `fuzz-int-method:"IntOptions"`
+	IntField5 int32 `fuzz-int-method:"IntOptions"`
 	//
-	UintField0 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField1 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField2 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField3 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField4 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField5 uint64 `fuzz-uint-method:"UintOptions"`
+	UintField0 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField1 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField2 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField3 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField4 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField5 uint32 `fuzz-uint-method:"UintOptions"`
 	//
-	FloatField0 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField1 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField2 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField3 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField4 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField5 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField0 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField1 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField2 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField3 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField4 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField5 float32 `fuzz-float-method:"FloatOptions"`
 	//
 	InterfaceField0 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
 	InterfaceField1 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
@@ -546,8 +546,8 @@ func (s *methodStruct) StringOptions() []string {
 }
 
 // Value receiver method
-func (s methodStruct) IntOptions() []int64 {
-	return []int64{
+func (s methodStruct) IntOptions() []int32 {
+	return []int32{
 		0,
 		-1,
 		-2,
@@ -558,8 +558,8 @@ func (s methodStruct) IntOptions() []int64 {
 }
 
 // Pointer receiver method
-func (s *methodStruct) UintOptions() []uint64 {
-	return []uint64{
+func (s *methodStruct) UintOptions() []uint32 {
+	return []uint32{
 		0,
 		10,
 		20,
@@ -570,8 +570,8 @@ func (s *methodStruct) UintOptions() []uint64 {
 }
 
 // Value receiver method
-func (s methodStruct) FloatOptions() []float64 {
-	return []float64{
+func (s methodStruct) FloatOptions() []float32 {
+	return []float32{
 		0.0,
 		0.1,
 		0.2,
@@ -650,26 +650,26 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	assert.Equal(t, "four", val.StringField4)
 	assert.Equal(t, "five", val.StringField5)
 
-	assert.Equal(t, int64(0), val.IntField0)
-	assert.Equal(t, int64(-1), val.IntField1)
-	assert.Equal(t, int64(-2), val.IntField2)
-	assert.Equal(t, int64(-3), val.IntField3)
-	assert.Equal(t, int64(-4), val.IntField4)
-	assert.Equal(t, int64(-5), val.IntField5)
+	assert.Equal(t, int32(0), val.IntField0)
+	assert.Equal(t, int32(-1), val.IntField1)
+	assert.Equal(t, int32(-2), val.IntField2)
+	assert.Equal(t, int32(-3), val.IntField3)
+	assert.Equal(t, int32(-4), val.IntField4)
+	assert.Equal(t, int32(-5), val.IntField5)
 
-	assert.Equal(t, uint64(0), val.UintField0)
-	assert.Equal(t, uint64(10), val.UintField1)
-	assert.Equal(t, uint64(20), val.UintField2)
-	assert.Equal(t, uint64(30), val.UintField3)
-	assert.Equal(t, uint64(40), val.UintField4)
-	assert.Equal(t, uint64(50), val.UintField5)
+	assert.Equal(t, uint32(0), val.UintField0)
+	assert.Equal(t, uint32(10), val.UintField1)
+	assert.Equal(t, uint32(20), val.UintField2)
+	assert.Equal(t, uint32(30), val.UintField3)
+	assert.Equal(t, uint32(40), val.UintField4)
+	assert.Equal(t, uint32(50), val.UintField5)
 
-	assert.Equal(t, float64(0.0), val.FloatField0)
-	assert.Equal(t, float64(0.1), val.FloatField1)
-	assert.Equal(t, float64(0.2), val.FloatField2)
-	assert.Equal(t, float64(0.3), val.FloatField3)
-	assert.Equal(t, float64(0.4), val.FloatField4)
-	assert.Equal(t, float64(0.5), val.FloatField5)
+	assert.Equal(t, float32(0.0), val.FloatField0)
+	assert.Equal(t, float32(0.1), val.FloatField1)
+	assert.Equal(t, float32(0.2), val.FloatField2)
+	assert.Equal(t, float32(0.3), val.FloatField3)
+	assert.Equal(t, float32(0.4), val.FloatField4)
+	assert.Equal(t, float32(0.5), val.FloatField5)
 
 	assert.Equal(t, "interfaceDemoA", val.InterfaceField0.InterfaceMethod())
 	assert.Equal(t, "interfaceDemoB", val.InterfaceField1.InterfaceMethod())

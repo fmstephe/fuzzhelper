@@ -370,23 +370,93 @@ func newMethodTag[T any](structVal reflect.Value, field reflect.StructField, tag
 
 	result := method.Call([]reflect.Value{})
 
+	// Convert to a slice typed []T - and ensure that every value in the slice can be assigned to the target field
+	typedSlice, err := copyToTypedSlice[T](result[0], field.Type)
+	if err != nil {
+		panic(fmt.Errorf("%s.%s cannot be assigned by every value returned by %s.%s(), %w", structVal.Type(), field.Name, structVal.Type(), methodName, err))
+	}
+
+	if len(typedSlice) == 0 {
+		panic(fmt.Errorf("%s.%s has options method %s.%s(), but it returns an empty slice", structVal.Type(), field.Name, structVal.Type(), methodName))
+	}
+
 	return methodTag[[]T]{
 		wasSet:     true,
 		methodName: methodName,
-		value:      copyToTypedSlice[T](result[0]),
+		value:      typedSlice,
 	}
 }
 
-func copyToTypedSlice[T any](src reflect.Value) []T {
-	if src.Kind() != reflect.Slice {
-		panic(fmt.Errorf("expected slice kind, got %s", src.Kind().String()))
+func copyToTypedSlice[T any](srcSlice reflect.Value, assignType reflect.Type) ([]T, error) {
+	if srcSlice.Kind() != reflect.Slice {
+		return nil, fmt.Errorf("method must return a slice, but it returns %s", srcSlice.Kind().String())
 	}
 
-	result := make([]T, src.Len())
+	result := make([]T, srcSlice.Len())
+	resultVal := reflect.ValueOf(result)
 
 	for i := range result {
-		result[i] = src.Index(i).Interface().(T)
+		elem := srcSlice.Index(i)
+		if err := isAssignable(elem, assignType); err != nil {
+			return nil, err
+		}
+
+		assign(elem, resultVal.Index(i))
 	}
 
-	return result
+	return result, nil
+}
+
+func isAssignable(value reflect.Value, assignType reflect.Type) error {
+	if assignType.Kind() == reflect.Slice {
+		// If we are assigning to a slice, we want to know if we can
+		// append value to that slice. Get the type of the slice
+		// elements.
+		// TODO, we probably need to do this for maps as well
+		assignType = assignType.Elem()
+	}
+
+	if assignType.Kind() == reflect.Interface && value.Kind() == reflect.Interface && value.Elem().Kind() != reflect.Pointer {
+		// We restrict all interface assignments to pointer types only.
+		// This is done _purely_ to simplify the process of determining
+		// whether a type satisfies an interface
+		return fmt.Errorf("value of type %s must be a pointer (not a value type) to assign to interface type %s", value.Elem().Type(), assignType)
+	}
+
+	if !value.Type().AssignableTo(assignType) {
+		return fmt.Errorf("value of type %s cannot be assigned to %s", value.Type(), assignType)
+	}
+
+	return nil
+}
+
+// Here do type conversion for storing in the tag options slices
+// The tag slices are of type int64, uint64, float64, string or any
+//
+// Many of the values we are assigning here actually have narrower specific
+// types. For example the options might be providing a range of int32 values or
+// an interface more specific than any.  In the function above we checked that
+// the value was assignable to its destination field, here we assign this
+// narrow type to one of the tag slice types. So we need to perform some type
+// conversion, like widing a numeric type or converting a specific interface
+// type to any. Strings are fine as is and don't need any type conversion.
+//
+// This works in practice because our conversions always preserve the original
+// type and so the wider values can be used to set the field without loss of
+// information.
+func assign(value, dest reflect.Value) {
+	switch dest.Kind() {
+	case reflect.Int64:
+		dest.SetInt(value.Int())
+	case reflect.Uint64:
+		dest.SetUint(value.Uint())
+	case reflect.Float64:
+		dest.SetFloat(value.Float())
+	case reflect.String:
+		dest.Set(value)
+	case reflect.Interface:
+		dest.Set(reflect.ValueOf(value.Interface()))
+	default:
+		panic(fmt.Errorf("Unsupported assignment found: %s", dest.Kind()))
+	}
 }

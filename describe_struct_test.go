@@ -56,8 +56,8 @@ type intMethodStruct struct {
 	IntField int `fuzz-int-method:"IntValues"`
 }
 
-func (s *intMethodStruct) IntValues() []int64 {
-	return []int64{
+func (s *intMethodStruct) IntValues() []int {
+	return []int{
 		-1,
 		-2,
 		-3,
@@ -96,8 +96,8 @@ type uintMethodStruct struct {
 	UintField uint `fuzz-uint-method:"UintValues"`
 }
 
-func (s *uintMethodStruct) UintValues() []uint64 {
-	return []uint64{
+func (s *uintMethodStruct) UintValues() []uint {
+	return []uint{
 		1,
 		2,
 		3,
