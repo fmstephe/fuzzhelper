@@ -82,6 +82,9 @@ func typeString(typ reflect.Type) string {
 		// We don't bother to capture the actual interface type
 		return "interface"
 	default:
-		return typ.Name()
+		if name := typ.Name(); name != "" {
+			return name
+		}
+		return typ.String()
 	}
 }

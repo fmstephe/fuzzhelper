@@ -8,26 +8,25 @@ import (
 type visitFunc func() []visitFunc
 
 type valueVisitor interface {
-	canGrowRootSlice() bool
-	visitBool(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitInt(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitUint(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitUintptr(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitFloat(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitBool(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitInt(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitUint(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitUintptr(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitFloat(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitComplex(reflect.Value, fuzzTags, valuePath)
 	visitArray(reflect.Value, fuzzTags, valuePath)
 	visitChan(reflect.Value, fuzzTags, valuePath)
 	visitFunc(reflect.Value, fuzzTags, valuePath)
-	visitInterface(reflect.Value, fuzzTags, valuePath)
-	visitMap(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
-	visitPointer(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
-	visitSlice(reflect.Value, *ByteConsumer, fuzzTags, valuePath) int
-	visitString(reflect.Value, *ByteConsumer, fuzzTags, valuePath)
+	visitInterface(reflect.Value, *byteConsumer, fuzzTags, valuePath) bool
+	visitMap(reflect.Value, *byteConsumer, fuzzTags, valuePath) int
+	visitPointer(reflect.Value, *byteConsumer, fuzzTags, valuePath)
+	visitSlice(reflect.Value, *byteConsumer, fuzzTags, valuePath) (from, to int)
+	visitString(reflect.Value, *byteConsumer, fuzzTags, valuePath)
 	visitStruct(reflect.Value, fuzzTags, valuePath) bool
 	visitUnsafePointer(reflect.Value, fuzzTags, valuePath)
 }
 
-func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) visitFunc {
+func newVisitFunc(callback valueVisitor, value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) visitFunc {
 	return func() []visitFunc {
 		//println(fmt.Sprintf("before %#v\n", value.Interface()))
 		ffs := visitValue(callback, value, c, tags, path)
@@ -36,52 +35,17 @@ func newVisitFunc(callback valueVisitor, value reflect.Value, c *ByteConsumer, t
 	}
 }
 
-func visitRoot(callback valueVisitor, root any, c *ByteConsumer) {
+func visitRoot(callback valueVisitor, root any, c *byteConsumer) {
 	rootVal := reflect.ValueOf(root)
 
 	path := valuePath{}
-	if isPointerToSlice(rootVal) {
-		visitRootSlice(callback, rootVal, c, path)
-	} else {
-		visitBreadthFirst(callback, rootVal, c, path)
-	}
+	visitBreadthFirst(callback, rootVal, c, path)
 
 	//println("")
 }
 
-func isPointerToSlice(value reflect.Value) bool {
-	return value.Kind() == reflect.Pointer && value.Elem().Kind() == reflect.Slice
-}
-
-func visitRootSlice(callback valueVisitor, pointerVal reflect.Value, c *ByteConsumer, path valuePath) {
-	path = path.add(pointerVal, "*")
-
-	sliceVal := pointerVal.Elem()
-	sliceType := sliceVal.Type().Elem()
-
-	// Fill up the slice with all the available data
-	for i := 0; c.Len() > 0; i++ {
-		// Create a new element for the slice
-		pathName := fmt.Sprintf("[%d]", i)
-		newVal := reflect.New(sliceType).Elem()
-
-		// Fill in that new element with data
-		visitBreadthFirst(callback, newVal, c, path.add(sliceVal, pathName))
-
-		// Append the new element to the slice
-		sliceVal.Set(reflect.Append(sliceVal, newVal))
-
-		if !callback.canGrowRootSlice() {
-			// If we don't make this check then the describer will
-			// be unable to stop this slice from growing
-			// indefinitely
-			break
-		}
-	}
-}
-
-func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *ByteConsumer, path valuePath) {
-	values := newDequeue[visitFunc]()
+func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *byteConsumer, path valuePath) {
+	values := newDeque[visitFunc]()
 
 	visitFuncs := visitValue(callback, value, c, newEmptyFuzzTags(), path)
 	values.addMany(visitFuncs)
@@ -93,8 +57,8 @@ func visitBreadthFirst(callback valueVisitor, value reflect.Value, c *ByteConsum
 	}
 }
 
-func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tags fuzzTags, path valuePath) []visitFunc {
-	if c.Len() == 0 {
+func visitValue(callback valueVisitor, value reflect.Value, c *byteConsumer, tags fuzzTags, path valuePath) []visitFunc {
+	if c.len() == 0 {
 		// There are no more bytes to use to visit data
 		return []visitFunc{}
 	}
@@ -143,8 +107,13 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		return []visitFunc{}
 
 	case reflect.Interface:
-		callback.visitInterface(value, tags, path)
-		return []visitFunc{}
+		if callback.visitInterface(value, c, tags, path) {
+			return []visitFunc{
+				newVisitFunc(callback, value.Elem(), c, newEmptyFuzzTags(), path.add(value, "(ifc)")),
+			}
+		} else {
+			return []visitFunc{}
+		}
 
 	case reflect.Map:
 		mapLen := callback.visitMap(value, c, tags, path)
@@ -183,13 +152,29 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 		}
 
 	case reflect.Slice:
-		sliceLen := callback.visitSlice(value, c, tags, path)
+		from, to := callback.visitSlice(value, c, tags, path)
 
+		// Add a single element to the slice (which should be non-nil now)
 		newValues := []visitFunc{}
-		for i := range sliceLen {
+
+		if !value.CanSet() {
+			return newValues
+		}
+
+		// Fill in all elements.
+		for i := from; i < to; i++ {
 			pathVal := fmt.Sprintf("[%d]", i)
 			newValues = append(newValues, visitValue(callback, value.Index(i), c, tags, path.add(value, pathVal))...)
 		}
+
+		if !tags.sliceRange.uintRange.wasSet && from != to {
+			// This slice has an unbounded size.  Create a
+			// recursive callback to this slice, to allow more
+			// elements to be appended to the slice if there is
+			// enough data
+			newValues = append(newValues, newVisitFunc(callback, value, c, tags, path))
+		}
+
 		return newValues
 
 	case reflect.String:
@@ -216,13 +201,7 @@ func visitValue(callback valueVisitor, value reflect.Value, c *ByteConsumer, tag
 			vField := value.Field(i)
 			tField := vType.Field(i)
 			tags := newFuzzTags(value, tField)
-			if vField.CanSet() {
-				newValues = append(newValues, visitValue(callback, vField, c, tags, path.add(value, tField.Name))...)
-			} else {
-				// We visit this unsettable field so we can describe it
-				// It should not be filled and any returned fill functions are ignored
-				visitValue(callback, vField, c, tags, path.add(value, tField.Name))
-			}
+			newValues = append(newValues, visitValue(callback, vField, c, tags, path.add(value, tField.Name))...)
 		}
 
 		return newValues

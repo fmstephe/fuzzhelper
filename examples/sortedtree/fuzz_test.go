@@ -19,10 +19,14 @@ func FuzzSortedTree(f *testing.F) {
 	f.Fuzz(func(t *testing.T, bytes []byte) {
 		tree := New()
 		steps := &[]SortedTreeFuzzStep{}
-		c := fuzzhelper.NewByteConsumer(bytes)
+		// Run Describe, when running fuzzer as a normal test this will
+		// help understanding how steps is bieng filled
 		fuzzhelper.Describe(&[]SortedTreeFuzzStep{})
-		fuzzhelper.Fill(steps, c)
 
+		// Construct the steps using the data in bytes
+		fuzzhelper.Fill(steps, bytes)
+		// Separately constructed sorted strings to verify our tree
+		// implementation
 		sortedStrings := []string{}
 
 		for _, step := range *steps {

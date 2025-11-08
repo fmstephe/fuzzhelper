@@ -70,45 +70,45 @@ func TestFill_SimpleTypes(t *testing.T) {
 
 	// Test value
 	val := testStruct{}
-	Fill(&val, buildSimpleTestByteConsumer())
+	Fill(&val, buildSimpleTestByteConsumer().getRawBytes())
 
 	assert.Equal(t, expected, val)
 
 	// Test pointer
 	valp := &testStruct{}
-	Fill(valp, buildSimpleTestByteConsumer())
+	Fill(valp, buildSimpleTestByteConsumer().getRawBytes())
 	assert.Equal(t, expected, *valp)
 
 	// Test pointer to pointer
 	var valpp *testStruct
-	Fill(&valpp, buildSimpleTestByteConsumer())
+	Fill(&valpp, buildSimpleTestByteConsumer().getRawBytes())
 	assert.NotNil(t, valpp)
 	assert.Equal(t, expected, *valpp)
 }
 
 // Builds a ByteConsumer which should build a testStruct which matches the expected values
-func buildSimpleTestByteConsumer() *ByteConsumer {
+func buildSimpleTestByteConsumer() *byteConsumer {
 	// Set all the fill values here
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 
 	// IntValue fields
-	c.pushInt64(-1, BytesForNative)
-	c.pushInt64(-64, BytesFor64)
-	c.pushInt64(-32, BytesFor32)
-	c.pushInt64(-16, BytesFor16)
-	c.pushInt64(-8, BytesFor8)
+	c.pushInt64(-1, bytesForNative)
+	c.pushInt64(-64, bytesFor64)
+	c.pushInt64(-32, bytesFor32)
+	c.pushInt64(-16, bytesFor16)
+	c.pushInt64(-8, bytesFor8)
 
 	// UintValue field
-	c.pushUint64(1, BytesForNative)
-	c.pushUint64(64, BytesFor64)
-	c.pushUint64(32, BytesFor32)
-	c.pushUint64(16, BytesFor16)
-	c.pushUint64(8, BytesFor8)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(64, bytesFor64)
+	c.pushUint64(32, bytesFor32)
+	c.pushUint64(16, bytesFor16)
+	c.pushUint64(8, bytesFor8)
 
 	// Float64Value field
-	c.pushFloat64(3.1415, BytesFor64)
+	c.pushFloat64(3.1415, bytesFor64)
 	// Float32Value field
-	c.pushFloat64(4.1415, BytesFor32)
+	c.pushFloat64(4.1415, bytesFor32)
 
 	// Bool1Value field
 	c.pushBool(true)
@@ -123,25 +123,27 @@ func buildSimpleTestByteConsumer() *ByteConsumer {
 
 	// ArrayValue has fixed size, requires no data
 	// ArrayValue Elements
-	c.pushInt64(-2, BytesForNative)
-	c.pushInt64(-3, BytesForNative)
-	c.pushInt64(-4, BytesForNative)
-	c.pushInt64(-5, BytesForNative)
+	c.pushInt64(-2, bytesForNative)
+	c.pushInt64(-3, bytesForNative)
+	c.pushInt64(-4, bytesForNative)
+	c.pushInt64(-5, bytesForNative)
 
 	// SliceValue Size
-	c.pushUint64(4, BytesForNative)
-	// SliceValue Elements
-	c.pushUint64(2, BytesForNative)
-	c.pushUint64(3, BytesForNative)
-	c.pushUint64(4, BytesForNative)
-	c.pushUint64(5, BytesForNative)
+	//c.pushUint64(4, bytesForNative)
+	// SliceValue First Element
+	c.pushUint64(2, bytesForNative)
 
 	// Map Size
-	c.pushInt64(1, BytesForNative)
+	c.pushInt64(1, bytesForNative)
 	// MapValue map key
 	c.pushString("map key string")
 	// MapValue map entry
-	c.pushFloat64(5.1415, BytesFor64)
+	c.pushFloat64(5.1415, bytesFor64)
+
+	// SliceValue remaining elements
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
 
 	return c
 }
@@ -155,16 +157,16 @@ func TestFill_Map(t *testing.T) {
 	}
 
 	// Set all the fill values here
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// map is size 1
-	c.pushUint64(1, BytesForNative)
+	c.pushUint64(1, bytesForNative)
 	// IntValue field
-	c.pushUint64(1, BytesForNative)
-	c.pushUint64(2, BytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
 
 	// Test value
 	val := testStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 	assert.Equal(t, 1, len(val.MapValue))
 	assert.Equal(t, 2, val.MapValue[1].IntField)
 }
@@ -189,8 +191,8 @@ func TestFill_Complex(t *testing.T) {
 		}
 	}
 
-	innerInnerBytesF := func(c *ByteConsumer) {
-		c.pushInt64(1, BytesForNative)
+	innerInnerBytesF := func(c *byteConsumer) {
+		c.pushInt64(1, bytesForNative)
 		c.pushString("innerinner")
 	}
 
@@ -209,8 +211,8 @@ func TestFill_Complex(t *testing.T) {
 		}
 	}
 
-	innerBytesF := func(c *ByteConsumer) {
-		c.pushInt64(-2, BytesForNative)
+	innerBytesF := func(c *byteConsumer) {
+		c.pushInt64(-2, bytesForNative)
 		innerInnerBytesF(c)
 		c.pushString("inner")
 	}
@@ -220,11 +222,11 @@ func TestFill_Complex(t *testing.T) {
 		MapField map[string]innerStruct
 	}
 
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// First layer of InnerV field
 	innerBytesF(c)
 	// Map size
-	c.pushInt64(1, BytesForNative)
+	c.pushInt64(1, bytesForNative)
 	c.pushString("key")
 	innerBytesF(c)
 
@@ -238,7 +240,7 @@ func TestFill_Complex(t *testing.T) {
 
 	// Test value
 	val := testStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assert.Equal(t, expected, val)
 }
@@ -249,8 +251,8 @@ func TestLinkedList_One(t *testing.T) {
 		Next  *node
 	}
 
-	c := NewByteConsumer([]byte{})
-	c.pushInt64(1, BytesForNative)
+	c := newByteConsumer([]byte{})
+	c.pushInt64(1, bytesForNative)
 
 	expected := node{
 		Value: 1,
@@ -258,7 +260,7 @@ func TestLinkedList_One(t *testing.T) {
 	}
 
 	val := node{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assert.Equal(t, expected, val)
 }
@@ -269,9 +271,9 @@ func TestLinkedList_Two(t *testing.T) {
 		Next  *node
 	}
 
-	c := NewByteConsumer([]byte{})
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
+	c := newByteConsumer([]byte{})
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
 
 	expected := node{
 		Value: 1,
@@ -282,7 +284,7 @@ func TestLinkedList_Two(t *testing.T) {
 	}
 
 	val := node{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assert.Equal(t, expected, val)
 }
@@ -293,10 +295,10 @@ func TestLinkedList_Three(t *testing.T) {
 		Next  *node
 	}
 
-	c := NewByteConsumer([]byte{})
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
+	c := newByteConsumer([]byte{})
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
 
 	expected := node{
 		Value: 1,
@@ -310,7 +312,7 @@ func TestLinkedList_Three(t *testing.T) {
 	}
 
 	val := node{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assert.Equal(t, expected, val)
 }
@@ -324,13 +326,13 @@ func TestBalancedBinaryTree(t *testing.T) {
 		RightChild *node
 	}
 
-	c := NewByteConsumer([]byte{})
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(4, BytesForNative)
-	c.pushInt64(5, BytesForNative)
-	c.pushInt64(6, BytesForNative)
+	c := newByteConsumer([]byte{})
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
+	c.pushInt64(4, bytesForNative)
+	c.pushInt64(5, bytesForNative)
+	c.pushInt64(6, bytesForNative)
 
 	expected := node{
 		Value: 1,
@@ -363,7 +365,7 @@ func TestBalancedBinaryTree(t *testing.T) {
 	}
 
 	val := node{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assert.Equal(t, expected, val)
 }
@@ -378,22 +380,22 @@ func TestFill_UnsupportedTypes(t *testing.T) {
 		UnsafePointerField unsafe.Pointer
 	}
 
-	c := NewByteConsumer([]byte{})
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(4, BytesForNative)
-	c.pushInt64(5, BytesForNative)
-	c.pushInt64(6, BytesForNative)
-	c.pushInt64(7, BytesForNative)
-	c.pushInt64(8, BytesForNative)
-	c.pushInt64(9, BytesForNative)
-	c.pushInt64(10, BytesForNative)
-	c.pushInt64(11, BytesForNative)
-	c.pushInt64(12, BytesForNative)
+	c := newByteConsumer([]byte{})
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
+	c.pushInt64(4, bytesForNative)
+	c.pushInt64(5, bytesForNative)
+	c.pushInt64(6, bytesForNative)
+	c.pushInt64(7, bytesForNative)
+	c.pushInt64(8, bytesForNative)
+	c.pushInt64(9, bytesForNative)
+	c.pushInt64(10, bytesForNative)
+	c.pushInt64(11, bytesForNative)
+	c.pushInt64(12, bytesForNative)
 
 	val := &testStruct{}
-	Fill(val, c)
+	Fill(val, c.getRawBytes())
 
 	// Assert that none of those fields are set
 	assert.Equal(t, &testStruct{}, val)
@@ -408,11 +410,11 @@ func TestFill_RootSlice(t *testing.T) {
 
 	{
 		// Create root slice with enough data for one element
-		c := NewByteConsumer([]byte{})
-		c.pushInt64(1, BytesForNative)
+		c := newByteConsumer([]byte{})
+		c.pushInt64(1, bytesForNative)
 
 		val := &[]testStruct{}
-		Fill(val, c)
+		Fill(val, c.getRawBytes())
 
 		assert.Equal(t, &[]testStruct{
 			testStruct{1},
@@ -421,12 +423,12 @@ func TestFill_RootSlice(t *testing.T) {
 
 	{
 		// Create root slice with enough data for two elements
-		c := NewByteConsumer([]byte{})
-		c.pushInt64(1, BytesForNative)
-		c.pushInt64(2, BytesForNative)
+		c := newByteConsumer([]byte{})
+		c.pushInt64(1, bytesForNative)
+		c.pushInt64(2, bytesForNative)
 
 		val := &[]testStruct{}
-		Fill(val, c)
+		Fill(val, c.getRawBytes())
 
 		assert.Equal(t, &[]testStruct{
 			testStruct{1},
@@ -436,13 +438,13 @@ func TestFill_RootSlice(t *testing.T) {
 
 	{
 		// Create root slice with enough data for three elements
-		c := NewByteConsumer([]byte{})
-		c.pushInt64(1, BytesForNative)
-		c.pushInt64(2, BytesForNative)
-		c.pushInt64(3, BytesForNative)
+		c := newByteConsumer([]byte{})
+		c.pushInt64(1, bytesForNative)
+		c.pushInt64(2, bytesForNative)
+		c.pushInt64(3, bytesForNative)
 
 		val := &[]testStruct{}
-		Fill(val, c)
+		Fill(val, c.getRawBytes())
 
 		assert.Equal(t, &[]testStruct{
 			testStruct{1},
@@ -453,22 +455,22 @@ func TestFill_RootSlice(t *testing.T) {
 
 	{
 		// Create root slice with enough data for twelve elements
-		c := NewByteConsumer([]byte{})
-		c.pushInt64(1, BytesForNative)
-		c.pushInt64(2, BytesForNative)
-		c.pushInt64(3, BytesForNative)
-		c.pushInt64(4, BytesForNative)
-		c.pushInt64(5, BytesForNative)
-		c.pushInt64(6, BytesForNative)
-		c.pushInt64(7, BytesForNative)
-		c.pushInt64(8, BytesForNative)
-		c.pushInt64(9, BytesForNative)
-		c.pushInt64(10, BytesForNative)
-		c.pushInt64(11, BytesForNative)
-		c.pushInt64(12, BytesForNative)
+		c := newByteConsumer([]byte{})
+		c.pushInt64(1, bytesForNative)
+		c.pushInt64(2, bytesForNative)
+		c.pushInt64(3, bytesForNative)
+		c.pushInt64(4, bytesForNative)
+		c.pushInt64(5, bytesForNative)
+		c.pushInt64(6, bytesForNative)
+		c.pushInt64(7, bytesForNative)
+		c.pushInt64(8, bytesForNative)
+		c.pushInt64(9, bytesForNative)
+		c.pushInt64(10, bytesForNative)
+		c.pushInt64(11, bytesForNative)
+		c.pushInt64(12, bytesForNative)
 
 		val := &[]testStruct{}
-		Fill(val, c)
+		Fill(val, c.getRawBytes())
 
 		// Assert that none of those fields are set
 		assert.Equal(t, &[]testStruct{

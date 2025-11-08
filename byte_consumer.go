@@ -15,28 +15,32 @@ import (
 var nativeInt = 0
 
 const (
-	BytesForNative = uintptr(unsafe.Sizeof(nativeInt))
-	BytesFor64     = 8
-	BytesFor32     = 4
-	BytesFor16     = 2
-	BytesFor8      = 1
+	bytesForNative = uintptr(unsafe.Sizeof(nativeInt))
+	bytesFor64     = 8
+	bytesFor32     = 4
+	bytesFor16     = 2
+	bytesFor8      = 1
 )
 
-type ByteConsumer struct {
+type byteConsumer struct {
 	bytes []byte
 }
 
-func NewByteConsumer(bytes []byte) *ByteConsumer {
-	return &ByteConsumer{
+func newByteConsumer(bytes []byte) *byteConsumer {
+	return &byteConsumer{
 		bytes: bytes,
 	}
 }
 
-func (c *ByteConsumer) Len() int {
+func (c *byteConsumer) getRawBytes() []byte {
+	return c.bytes
+}
+
+func (c *byteConsumer) len() int {
 	return len(c.bytes)
 }
 
-func (c *ByteConsumer) Bytes(size int) []byte {
+func (c *byteConsumer) consume(size int) []byte {
 	consumed := make([]byte, size)
 	copy(consumed, c.bytes)
 
@@ -49,65 +53,65 @@ func (c *ByteConsumer) Bytes(size int) []byte {
 }
 
 // Test only
-func (c *ByteConsumer) pushBytes(bytes []byte) {
+func (c *byteConsumer) pushBytes(bytes []byte) {
 	c.bytes = append(c.bytes, bytes...)
 }
 
-func (c *ByteConsumer) Byte() byte {
-	dest := c.Bytes(1)
+func (c *byteConsumer) singleByte() byte {
+	dest := c.consume(1)
 	return dest[0]
 }
 
 // Test only
-func (c *ByteConsumer) pushByte(b byte) {
+func (c *byteConsumer) pushByte(b byte) {
 	c.pushBytes([]byte{b})
 }
 
-func (c *ByteConsumer) Uint64(bytes uintptr) uint64 {
+func (c *byteConsumer) consumeUint64(bytes uintptr) uint64 {
 	switch bytes {
 	case 8:
-		dest := c.Bytes(8)
+		dest := c.consume(8)
 		return binary.LittleEndian.Uint64(dest)
 	case 4:
-		dest := c.Bytes(4)
+		dest := c.consume(4)
 		return uint64(binary.LittleEndian.Uint32(dest))
 	case 2:
-		dest := c.Bytes(2)
+		dest := c.consume(2)
 		return uint64(binary.LittleEndian.Uint16(dest))
 	case 1:
-		dest := c.Bytes(1)
+		dest := c.consume(1)
 		return uint64(dest[0])
 	default:
 		panic(fmt.Sprintf("Must provided either 8, 4, 2, or 1 as bytes argument. %d found.", bytes))
 	}
 }
 
-func (c *ByteConsumer) Int64(bytes uintptr) int64 {
+func (c *byteConsumer) consumeInt64(bytes uintptr) int64 {
 	switch bytes {
 	case 8:
-		dest := c.Bytes(8)
+		dest := c.consume(8)
 		return int64(binary.LittleEndian.Uint64(dest))
 	case 4:
-		dest := c.Bytes(4)
+		dest := c.consume(4)
 		return int64(int32((binary.LittleEndian.Uint32(dest))))
 	case 2:
-		dest := c.Bytes(2)
+		dest := c.consume(2)
 		return int64(int16((binary.LittleEndian.Uint16(dest))))
 	case 1:
-		dest := c.Bytes(1)
+		dest := c.consume(1)
 		return int64(int8((dest[0])))
 	default:
 		panic(fmt.Sprintf("Must provided either 8, 4, 2, or 1 as bytes argument. %d found.", bytes))
 	}
 }
 
-func (c *ByteConsumer) Float64(bytes uintptr) float64 {
+func (c *byteConsumer) consumeFloat64(bytes uintptr) float64 {
 	switch bytes {
 	case 8:
-		dest := c.Bytes(8)
+		dest := c.consume(8)
 		return math.Float64frombits(binary.LittleEndian.Uint64(dest))
 	case 4:
-		dest := c.Bytes(4)
+		dest := c.consume(4)
 		return float64(math.Float32frombits(binary.LittleEndian.Uint32(dest)))
 	default:
 		panic(fmt.Sprintf("Must provided either 8 or 4 as bytes argument. %d found.", bytes))
@@ -115,8 +119,8 @@ func (c *ByteConsumer) Float64(bytes uintptr) float64 {
 }
 
 // Returns a valid UTF8 string, which is at _most_ as long as length in runes
-func (c *ByteConsumer) String(length int) string {
-	bytes := c.Bytes(length)
+func (c *byteConsumer) String(length int) string {
+	bytes := c.consume(length)
 
 	// Extract the valid runes from the bytes
 	//
@@ -134,13 +138,13 @@ func (c *ByteConsumer) String(length int) string {
 	return string(validRunes)
 }
 
-func (c *ByteConsumer) Bool() bool {
-	bytes := c.Bytes(1)
+func (c *byteConsumer) consumeBool() bool {
+	bytes := c.consume(1)
 	return bytes[0]%2 == 1
 }
 
 // test only
-func (c *ByteConsumer) pushUint64(value uint64, bytes uintptr) {
+func (c *byteConsumer) pushUint64(value uint64, bytes uintptr) {
 	switch bytes {
 	case 8:
 		bytes := make([]byte, 8)
@@ -164,7 +168,7 @@ func (c *ByteConsumer) pushUint64(value uint64, bytes uintptr) {
 }
 
 // test only
-func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
+func (c *byteConsumer) pushInt64(value int64, bytes uintptr) {
 	switch bytes {
 	case 8:
 		c.pushUint64(uint64(value), bytes)
@@ -179,7 +183,7 @@ func (c *ByteConsumer) pushInt64(value int64, bytes uintptr) {
 	}
 }
 
-func (c *ByteConsumer) pushFloat64(value float64, bytes uintptr) {
+func (c *byteConsumer) pushFloat64(value float64, bytes uintptr) {
 	switch bytes {
 	case 8:
 		floatBits := math.Float64bits(value)
@@ -193,12 +197,12 @@ func (c *ByteConsumer) pushFloat64(value float64, bytes uintptr) {
 }
 
 // test only
-func (c *ByteConsumer) pushString(str string) {
-	c.pushInt64(int64(len(str)), BytesForNative)
+func (c *byteConsumer) pushString(str string) {
+	c.pushInt64(int64(len(str)), bytesForNative)
 	c.pushBytes([]byte(str))
 }
 
-func (c *ByteConsumer) pushBool(value bool) {
+func (c *byteConsumer) pushBool(value bool) {
 	if value {
 		c.pushBytes([]byte{1})
 	} else {

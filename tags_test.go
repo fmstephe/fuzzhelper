@@ -18,46 +18,46 @@ type intLimitStruct struct {
 
 func TestFuzzTags_IntLimits(t *testing.T) {
 	for i := -20_000; i <= 20_000; i++ {
-		c := NewByteConsumer([]byte{})
-		c.pushInt64(int64(i), BytesForNative)
-		c.pushInt64(int64(i), BytesFor64)
-		c.pushInt64(int64(i), BytesFor32)
-		c.pushInt64(int64(i), BytesFor16)
-		c.pushInt64(int64(i), BytesFor8)
+		c := newByteConsumer([]byte{})
+		c.pushInt64(int64(i), bytesForNative)
+		c.pushInt64(int64(i), bytesFor64)
+		c.pushInt64(int64(i), bytesFor32)
+		c.pushInt64(int64(i), bytesFor16)
+		c.pushInt64(int64(i), bytesFor8)
 
 		val := intLimitStruct{}
-		Fill(&val, c)
+		Fill(&val, c.getRawBytes())
 
 		assertIntLimits(t, val)
 	}
 }
 
 func TestFuzzTags_IntLimits_Positive(t *testing.T) {
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// Push a maximum int value for each field
-	c.pushInt64(math.MaxInt, BytesForNative)
-	c.pushInt64(math.MaxInt64, BytesFor64)
-	c.pushInt64(math.MaxInt32, BytesFor32)
-	c.pushInt64(math.MaxInt16, BytesFor16)
-	c.pushInt64(math.MaxInt8, BytesFor8)
+	c.pushInt64(math.MaxInt, bytesForNative)
+	c.pushInt64(math.MaxInt64, bytesFor64)
+	c.pushInt64(math.MaxInt32, bytesFor32)
+	c.pushInt64(math.MaxInt16, bytesFor16)
+	c.pushInt64(math.MaxInt8, bytesFor8)
 
 	val := intLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertIntLimits(t, val)
 }
 
 func TestFuzzTags_IntLimits_Negative(t *testing.T) {
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// Push a minimum int value for each field
-	c.pushInt64(math.MinInt, BytesForNative)
-	c.pushInt64(math.MinInt64, BytesFor64)
-	c.pushInt64(math.MinInt32, BytesFor32)
-	c.pushInt64(math.MinInt16, BytesFor16)
-	c.pushInt64(math.MinInt8, BytesFor8)
+	c.pushInt64(math.MinInt, bytesForNative)
+	c.pushInt64(math.MinInt64, bytesFor64)
+	c.pushInt64(math.MinInt32, bytesFor32)
+	c.pushInt64(math.MinInt16, bytesFor16)
+	c.pushInt64(math.MinInt8, bytesFor8)
 
 	val := intLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertIntLimits(t, val)
 }
@@ -89,46 +89,46 @@ type uintLimitStruct struct {
 
 func TestFuzzTags_UintLimits(t *testing.T) {
 	for i := 0; i <= 40_000; i++ {
-		c := NewByteConsumer([]byte{})
-		c.pushUint64(uint64(i), BytesForNative)
-		c.pushUint64(uint64(i), BytesFor64)
-		c.pushUint64(uint64(i), BytesFor32)
-		c.pushUint64(uint64(i), BytesFor16)
-		c.pushUint64(uint64(i), BytesFor8)
+		c := newByteConsumer([]byte{})
+		c.pushUint64(uint64(i), bytesForNative)
+		c.pushUint64(uint64(i), bytesFor64)
+		c.pushUint64(uint64(i), bytesFor32)
+		c.pushUint64(uint64(i), bytesFor16)
+		c.pushUint64(uint64(i), bytesFor8)
 
 		val := uintLimitStruct{}
-		Fill(&val, c)
+		Fill(&val, c.getRawBytes())
 
 		assertUintLimits(t, val)
 	}
 }
 
 func TestFuzzTags_UintLimits_Positive(t *testing.T) {
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// Push a maximum uint value for each field
-	c.pushUint64(math.MaxUint, BytesForNative)
-	c.pushUint64(math.MaxUint64, BytesFor64)
-	c.pushUint64(math.MaxUint32, BytesFor32)
-	c.pushUint64(math.MaxUint16, BytesFor16)
-	c.pushUint64(math.MaxUint8, BytesFor8)
+	c.pushUint64(math.MaxUint, bytesForNative)
+	c.pushUint64(math.MaxUint64, bytesFor64)
+	c.pushUint64(math.MaxUint32, bytesFor32)
+	c.pushUint64(math.MaxUint16, bytesFor16)
+	c.pushUint64(math.MaxUint8, bytesFor8)
 
 	val := uintLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertUintLimits(t, val)
 }
 
 func TestFuzzTags_UintLimits_Zero(t *testing.T) {
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// Push a minimum uint value for each field
-	c.pushUint64(0, BytesForNative)
-	c.pushUint64(0, BytesFor64)
-	c.pushUint64(0, BytesFor32)
-	c.pushUint64(0, BytesFor16)
-	c.pushUint64(0, BytesFor8)
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(0, bytesFor64)
+	c.pushUint64(0, bytesFor32)
+	c.pushUint64(0, bytesFor16)
+	c.pushUint64(0, bytesFor8)
 
 	val := uintLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertUintLimits(t, val)
 }
@@ -161,80 +161,80 @@ type floatLimitStruct struct {
 func TestFuzzTags_Float_Rand(t *testing.T) {
 	// Generate some random floats
 	for i := 0; i <= 40_000; i++ {
-		c := NewByteConsumer([]byte{})
-		c.pushFloat64(float64(rand.Float64()), BytesFor64)
-		c.pushFloat64(float64(rand.Float64()), BytesFor64)
-		c.pushFloat64(float64(rand.Float32()), BytesFor32)
-		c.pushFloat64(float64(rand.Float32()), BytesFor32)
+		c := newByteConsumer([]byte{})
+		c.pushFloat64(float64(rand.Float64()), bytesFor64)
+		c.pushFloat64(float64(rand.Float64()), bytesFor64)
+		c.pushFloat64(float64(rand.Float32()), bytesFor32)
+		c.pushFloat64(float64(rand.Float32()), bytesFor32)
 
 		val := floatLimitStruct{}
-		Fill(&val, c)
+		Fill(&val, c.getRawBytes())
 
 		assertFloatLimits(t, val)
 	}
 }
 
 func TestFuzzTags_Float_Max(t *testing.T) {
-	c := NewByteConsumer([]byte{})
-	c.pushFloat64(math.MaxFloat64, BytesFor64)
-	c.pushFloat64(math.MaxFloat64, BytesFor64)
-	c.pushFloat64(math.MaxFloat32, BytesFor32)
-	c.pushFloat64(math.MaxFloat32, BytesFor32)
+	c := newByteConsumer([]byte{})
+	c.pushFloat64(math.MaxFloat64, bytesFor64)
+	c.pushFloat64(math.MaxFloat64, bytesFor64)
+	c.pushFloat64(math.MaxFloat32, bytesFor32)
+	c.pushFloat64(math.MaxFloat32, bytesFor32)
 
 	val := floatLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertFloatLimits(t, val)
 }
 
 func TestFuzzTags_Float_Min(t *testing.T) {
-	c := NewByteConsumer([]byte{})
-	c.pushFloat64(-math.MaxFloat64, BytesFor64)
-	c.pushFloat64(-math.MaxFloat64, BytesFor64)
-	c.pushFloat64(-math.MaxFloat32, BytesFor32)
-	c.pushFloat64(-math.MaxFloat32, BytesFor32)
+	c := newByteConsumer([]byte{})
+	c.pushFloat64(-math.MaxFloat64, bytesFor64)
+	c.pushFloat64(-math.MaxFloat64, bytesFor64)
+	c.pushFloat64(-math.MaxFloat32, bytesFor32)
+	c.pushFloat64(-math.MaxFloat32, bytesFor32)
 
 	val := floatLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertFloatLimits(t, val)
 }
 
 func TestFuzzTags_Float_Zero(t *testing.T) {
-	c := NewByteConsumer([]byte{})
-	c.pushFloat64(0, BytesFor64)
-	c.pushFloat64(0, BytesFor64)
-	c.pushFloat64(0, BytesFor32)
-	c.pushFloat64(0, BytesFor32)
+	c := newByteConsumer([]byte{})
+	c.pushFloat64(0, bytesFor64)
+	c.pushFloat64(0, bytesFor64)
+	c.pushFloat64(0, bytesFor32)
+	c.pushFloat64(0, bytesFor32)
 
 	val := floatLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertFloatLimits(t, val)
 }
 
 func TestFuzzTags_Float_NaN(t *testing.T) {
-	c := NewByteConsumer([]byte{})
-	c.pushFloat64(math.NaN(), BytesFor64)
-	c.pushFloat64(math.NaN(), BytesFor64)
-	c.pushFloat64(math.NaN(), BytesFor32)
-	c.pushFloat64(math.NaN(), BytesFor32)
+	c := newByteConsumer([]byte{})
+	c.pushFloat64(math.NaN(), bytesFor64)
+	c.pushFloat64(math.NaN(), bytesFor64)
+	c.pushFloat64(math.NaN(), bytesFor32)
+	c.pushFloat64(math.NaN(), bytesFor32)
 
 	val := floatLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertFloatLimits(t, val)
 }
 
 func TestFuzzTags_Float_Inf(t *testing.T) {
-	c := NewByteConsumer([]byte{})
-	c.pushFloat64(math.Inf(1), BytesFor64)
-	c.pushFloat64(math.Inf(-1), BytesFor64)
-	c.pushFloat64(math.Inf(1), BytesFor32)
-	c.pushFloat64(math.Inf(-1), BytesFor32)
+	c := newByteConsumer([]byte{})
+	c.pushFloat64(math.Inf(1), bytesFor64)
+	c.pushFloat64(math.Inf(-1), bytesFor64)
+	c.pushFloat64(math.Inf(1), bytesFor32)
+	c.pushFloat64(math.Inf(-1), bytesFor32)
 
 	val := floatLimitStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assertFloatLimits(t, val)
 }
@@ -260,25 +260,26 @@ func TestFuzzTags_SliceLength(t *testing.T) {
 		FiveSlice    []int `fuzz-slice-range:"0,5"`
 	}
 
-	c := NewByteConsumer([]byte{})
-	// Create slice of size 3
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
+	c := newByteConsumer([]byte{})
+	// First slice is recursively built until we run out of data
+	c.pushInt64(1, bytesForNative)
 
 	// Create a slice of size 1, the length value consumed will be 4, but
 	// the length min/max forces the size to 1
-	c.pushInt64(4, BytesForNative)
-	c.pushInt64(1, BytesForNative)
+	c.pushInt64(4, bytesForNative)
+	c.pushInt64(1, bytesForNative)
 
 	// Create a slice of size 4, the length value consumed will be 10, but
 	// because the max length is 5 the fitted value will be 4
-	c.pushInt64(10, BytesForNative)
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(4, BytesForNative)
+	c.pushInt64(10, bytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
+	c.pushInt64(4, bytesForNative)
+
+	// After building the other slices, we add more data to continue building the first (unbounded) slice
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
 
 	expected := testStruct{
 		DefaultSlice: []int{1, 2, 3},
@@ -287,7 +288,7 @@ func TestFuzzTags_SliceLength(t *testing.T) {
 	}
 
 	val := testStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 	assert.Equal(t, expected, val)
 }
 
@@ -298,20 +299,20 @@ func TestFuzzTags_StringLength(t *testing.T) {
 		FiveString    string `fuzz-string-range:"0,5"`
 	}
 
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// Create slice of size 3
 
-	c.pushUint64(3, BytesForNative)
+	c.pushUint64(3, bytesForNative)
 	c.pushBytes([]byte("abc"))
 
 	// Create a slice of size 1, the length value consumed will be 4, but
 	// the length min/max forces the size to 1
-	c.pushUint64(4, BytesForNative)
+	c.pushUint64(4, bytesForNative)
 	c.pushBytes([]byte("a"))
 
 	// Create a slice of size 4, the length value consumed will be 10, but
 	// because the max length is 5 the fitted value will be 4
-	c.pushUint64(10, BytesForNative)
+	c.pushUint64(10, bytesForNative)
 	c.pushBytes([]byte("abcdefgh"))
 
 	expected := testStruct{
@@ -321,7 +322,7 @@ func TestFuzzTags_StringLength(t *testing.T) {
 	}
 
 	val := testStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 	assert.Equal(t, expected, val)
 }
 
@@ -332,38 +333,38 @@ func TestFuzzTags_MapLength(t *testing.T) {
 		FiveMap    map[int]int `fuzz-map-range:"0,5"`
 	}
 
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 
 	// Create map of size 3
-	c.pushUint64(3, BytesForNative)
+	c.pushUint64(3, bytesForNative)
 	// Values for DefaultMap
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(-1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(-2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(-3, BytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(-1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(-2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
+	c.pushInt64(-3, bytesForNative)
 
 	// Create a map of size 1, the length value consumed will be 4, but
 	// the length min/max forces the size to 1
-	c.pushUint64(4, BytesForNative)
+	c.pushUint64(4, bytesForNative)
 	// Values for OneMap
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(-1, BytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(-1, bytesForNative)
 
 	// Create a map of size 4, the length value consumed will be 10, but
 	// because the max length is 5 the fitted value will be 4
-	c.pushUint64(10, BytesForNative)
+	c.pushUint64(10, bytesForNative)
 
 	// Values for FiveMap
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(-1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(-2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(-3, BytesForNative)
-	c.pushInt64(4, BytesForNative)
-	c.pushInt64(-4, BytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(-1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(-2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
+	c.pushInt64(-3, bytesForNative)
+	c.pushInt64(4, bytesForNative)
+	c.pushInt64(-4, bytesForNative)
 
 	expected := testStruct{
 		DefaultMap: map[int]int{
@@ -383,7 +384,7 @@ func TestFuzzTags_MapLength(t *testing.T) {
 	}
 
 	val := testStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 	assert.Equal(t, expected, val)
 }
 
@@ -392,41 +393,41 @@ func TestFuzzTags_MapLengthKeysAndValues(t *testing.T) {
 		DefaultMap map[string][]int `fuzz-map-range:"0,5" fuzz-string-range:"0,4" fuzz-slice-range:"0,5"`
 	}
 
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 
 	// Create map of size 3
-	c.pushUint64(3, BytesForNative)
+	c.pushUint64(3, bytesForNative)
 
 	// First Key/Value
 	// String Key of length 3
-	c.pushInt64(3, BytesForNative)
+	c.pushInt64(3, bytesForNative)
 	c.pushBytes([]byte("abc"))
 	// Slice Value of length 1
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(1, BytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(1, bytesForNative)
 
 	// Second Key/Value
 	// String Key of length 4
-	c.pushInt64(4, BytesForNative)
+	c.pushInt64(4, bytesForNative)
 	c.pushBytes([]byte("abcd"))
 	// Slice Value of length 2
-	c.pushInt64(8, BytesForNative)
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
+	c.pushInt64(8, bytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
 
 	// Third Key/Value
 	// String Key of length 2
-	c.pushInt64(7, BytesForNative)
+	c.pushInt64(7, bytesForNative)
 	c.pushBytes([]byte("ab"))
 	// Slice Value of length 5
-	c.pushInt64(11, BytesForNative)
+	c.pushInt64(11, bytesForNative)
 
 	// Values "ab" slice
-	c.pushInt64(1, BytesForNative)
-	c.pushInt64(2, BytesForNative)
-	c.pushInt64(3, BytesForNative)
-	c.pushInt64(4, BytesForNative)
-	c.pushInt64(5, BytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	c.pushInt64(3, bytesForNative)
+	c.pushInt64(4, bytesForNative)
+	c.pushInt64(5, bytesForNative)
 
 	expected := testStruct{
 		DefaultMap: map[string][]int{
@@ -437,8 +438,62 @@ func TestFuzzTags_MapLengthKeysAndValues(t *testing.T) {
 	}
 
 	val := testStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 	assert.Equal(t, expected, val)
+}
+
+type interfaceDemo interface {
+	InterfaceMethod() string
+}
+
+type interfaceDemoA struct {
+	IntField     int
+	Float64Field float64
+}
+
+// Value Receiver method
+func (d *interfaceDemoA) InterfaceMethod() string {
+	return "interfaceDemoA"
+}
+
+type interfaceDemoB struct {
+}
+
+// Pointer Receiver method
+func (d *interfaceDemoB) InterfaceMethod() string {
+	return "interfaceDemoB"
+}
+
+type interfaceDemoC struct {
+}
+
+// Value Receiver method
+func (d *interfaceDemoC) InterfaceMethod() string {
+	return "interfaceDemoC"
+}
+
+type interfaceDemoD struct {
+}
+
+// Pointer Receiver method
+func (d *interfaceDemoD) InterfaceMethod() string {
+	return "interfaceDemoD"
+}
+
+type interfaceDemoE struct {
+}
+
+// Value Receiver method
+func (d *interfaceDemoE) InterfaceMethod() string {
+	return "interfaceDemoE"
+}
+
+type interfaceDemoF struct {
+}
+
+// Pointer Receiver method
+func (d *interfaceDemoF) InterfaceMethod() string {
+	return "interfaceDemoF"
 }
 
 type methodStruct struct {
@@ -449,26 +504,33 @@ type methodStruct struct {
 	StringField4 string `fuzz-string-method:"StringOptions"`
 	StringField5 string `fuzz-string-method:"StringOptions"`
 	//
-	IntField0 int64 `fuzz-int-method:"IntOptions"`
-	IntField1 int64 `fuzz-int-method:"IntOptions"`
-	IntField2 int64 `fuzz-int-method:"IntOptions"`
-	IntField3 int64 `fuzz-int-method:"IntOptions"`
-	IntField4 int64 `fuzz-int-method:"IntOptions"`
-	IntField5 int64 `fuzz-int-method:"IntOptions"`
+	IntField0 int32 `fuzz-int-method:"IntOptions"`
+	IntField1 int32 `fuzz-int-method:"IntOptions"`
+	IntField2 int32 `fuzz-int-method:"IntOptions"`
+	IntField3 int32 `fuzz-int-method:"IntOptions"`
+	IntField4 int32 `fuzz-int-method:"IntOptions"`
+	IntField5 int32 `fuzz-int-method:"IntOptions"`
 	//
-	UintField0 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField1 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField2 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField3 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField4 uint64 `fuzz-uint-method:"UintOptions"`
-	UintField5 uint64 `fuzz-uint-method:"UintOptions"`
+	UintField0 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField1 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField2 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField3 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField4 uint32 `fuzz-uint-method:"UintOptions"`
+	UintField5 uint32 `fuzz-uint-method:"UintOptions"`
 	//
-	FloatField0 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField1 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField2 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField3 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField4 float64 `fuzz-float-method:"FloatOptions"`
-	FloatField5 float64 `fuzz-float-method:"FloatOptions"`
+	FloatField0 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField1 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField2 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField3 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField4 float32 `fuzz-float-method:"FloatOptions"`
+	FloatField5 float32 `fuzz-float-method:"FloatOptions"`
+	//
+	InterfaceField0 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField1 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField2 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField3 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField4 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
+	InterfaceField5 interfaceDemo `fuzz-interface-method:"InterfaceOptions"`
 }
 
 // Pointer receiver method
@@ -484,8 +546,8 @@ func (s *methodStruct) StringOptions() []string {
 }
 
 // Value receiver method
-func (s methodStruct) IntOptions() []int64 {
-	return []int64{
+func (s methodStruct) IntOptions() []int32 {
+	return []int32{
 		0,
 		-1,
 		-2,
@@ -496,8 +558,8 @@ func (s methodStruct) IntOptions() []int64 {
 }
 
 // Pointer receiver method
-func (s *methodStruct) UintOptions() []uint64 {
-	return []uint64{
+func (s *methodStruct) UintOptions() []uint32 {
+	return []uint32{
 		0,
 		10,
 		20,
@@ -508,8 +570,8 @@ func (s *methodStruct) UintOptions() []uint64 {
 }
 
 // Value receiver method
-func (s methodStruct) FloatOptions() []float64 {
-	return []float64{
+func (s methodStruct) FloatOptions() []float32 {
+	return []float32{
 		0.0,
 		0.1,
 		0.2,
@@ -519,39 +581,67 @@ func (s methodStruct) FloatOptions() []float64 {
 	}
 }
 
+// Pointer receiver method
+func (s *methodStruct) InterfaceOptions() []interfaceDemo {
+	return []interfaceDemo{
+		// value receiver method, value type
+		&interfaceDemoA{},
+		// pointer receiver method, pointer type
+		&interfaceDemoB{},
+		// value receiver method, pointer type
+		&interfaceDemoC{},
+		// pointer receiver method, value type
+		&interfaceDemoD{},
+		// value receiver method, value type
+		&interfaceDemoE{},
+		// pointer receiver method, pointer type
+		&interfaceDemoF{},
+	}
+}
+
 func TestFuzzTags_MethodValues(t *testing.T) {
-	c := NewByteConsumer([]byte{})
+	c := newByteConsumer([]byte{})
 	// Values for strings
-	c.pushUint64(0, BytesForNative)
-	c.pushUint64(1, BytesForNative)
-	c.pushUint64(2, BytesForNative)
-	c.pushUint64(3, BytesForNative)
-	c.pushUint64(4, BytesForNative)
-	c.pushUint64(5, BytesForNative)
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
 	// Values for ints
-	c.pushUint64(0, BytesForNative)
-	c.pushUint64(1, BytesForNative)
-	c.pushUint64(2, BytesForNative)
-	c.pushUint64(3, BytesForNative)
-	c.pushUint64(4, BytesForNative)
-	c.pushUint64(5, BytesForNative)
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
 	// Values for uints
-	c.pushUint64(0, BytesForNative)
-	c.pushUint64(1, BytesForNative)
-	c.pushUint64(2, BytesForNative)
-	c.pushUint64(3, BytesForNative)
-	c.pushUint64(4, BytesForNative)
-	c.pushUint64(5, BytesForNative)
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
 	// Values for floats
-	c.pushUint64(0, BytesForNative)
-	c.pushUint64(1, BytesForNative)
-	c.pushUint64(2, BytesForNative)
-	c.pushUint64(3, BytesForNative)
-	c.pushUint64(4, BytesForNative)
-	c.pushUint64(5, BytesForNative)
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
+	// Values for interfaces
+	c.pushUint64(0, bytesForNative)
+	c.pushUint64(1, bytesForNative)
+	c.pushUint64(2, bytesForNative)
+	c.pushUint64(3, bytesForNative)
+	c.pushUint64(4, bytesForNative)
+	c.pushUint64(5, bytesForNative)
+	// Values for interfaceExampleA
+	c.pushInt64(-100, bytesForNative)
+	c.pushFloat64(123.123, bytesForNative)
 
 	val := methodStruct{}
-	Fill(&val, c)
+	Fill(&val, c.getRawBytes())
 
 	assert.Equal(t, "zero", val.StringField0)
 	assert.Equal(t, "one", val.StringField1)
@@ -560,24 +650,74 @@ func TestFuzzTags_MethodValues(t *testing.T) {
 	assert.Equal(t, "four", val.StringField4)
 	assert.Equal(t, "five", val.StringField5)
 
-	assert.Equal(t, int64(0), val.IntField0)
-	assert.Equal(t, int64(-1), val.IntField1)
-	assert.Equal(t, int64(-2), val.IntField2)
-	assert.Equal(t, int64(-3), val.IntField3)
-	assert.Equal(t, int64(-4), val.IntField4)
-	assert.Equal(t, int64(-5), val.IntField5)
+	assert.Equal(t, int32(0), val.IntField0)
+	assert.Equal(t, int32(-1), val.IntField1)
+	assert.Equal(t, int32(-2), val.IntField2)
+	assert.Equal(t, int32(-3), val.IntField3)
+	assert.Equal(t, int32(-4), val.IntField4)
+	assert.Equal(t, int32(-5), val.IntField5)
 
-	assert.Equal(t, uint64(0), val.UintField0)
-	assert.Equal(t, uint64(10), val.UintField1)
-	assert.Equal(t, uint64(20), val.UintField2)
-	assert.Equal(t, uint64(30), val.UintField3)
-	assert.Equal(t, uint64(40), val.UintField4)
-	assert.Equal(t, uint64(50), val.UintField5)
+	assert.Equal(t, uint32(0), val.UintField0)
+	assert.Equal(t, uint32(10), val.UintField1)
+	assert.Equal(t, uint32(20), val.UintField2)
+	assert.Equal(t, uint32(30), val.UintField3)
+	assert.Equal(t, uint32(40), val.UintField4)
+	assert.Equal(t, uint32(50), val.UintField5)
 
-	assert.Equal(t, float64(0.0), val.FloatField0)
-	assert.Equal(t, float64(0.1), val.FloatField1)
-	assert.Equal(t, float64(0.2), val.FloatField2)
-	assert.Equal(t, float64(0.3), val.FloatField3)
-	assert.Equal(t, float64(0.4), val.FloatField4)
-	assert.Equal(t, float64(0.5), val.FloatField5)
+	assert.Equal(t, float32(0.0), val.FloatField0)
+	assert.Equal(t, float32(0.1), val.FloatField1)
+	assert.Equal(t, float32(0.2), val.FloatField2)
+	assert.Equal(t, float32(0.3), val.FloatField3)
+	assert.Equal(t, float32(0.4), val.FloatField4)
+	assert.Equal(t, float32(0.5), val.FloatField5)
+
+	assert.Equal(t, "interfaceDemoA", val.InterfaceField0.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoB", val.InterfaceField1.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoC", val.InterfaceField2.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoD", val.InterfaceField3.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoE", val.InterfaceField4.InterfaceMethod())
+	assert.Equal(t, "interfaceDemoF", val.InterfaceField5.InterfaceMethod())
+
+	demoA := val.InterfaceField0.(*interfaceDemoA)
+	assert.Equal(t, -100, demoA.IntField)
+	assert.Equal(t, 123.123, demoA.Float64Field)
+}
+
+type exoticFloatValues struct {
+	Float64Field1 float64 `fuzz-float-method:"FloatOptions64"`
+	Float64Field2 float64 `fuzz-float-method:"FloatOptions64"`
+	Float64Field3 float64 `fuzz-float-method:"FloatOptions64"`
+	Float32Field1 float32 `fuzz-float-method:"FloatOptions32"`
+	Float32Field2 float32 `fuzz-float-method:"FloatOptions32"`
+	Float32Field3 float32 `fuzz-float-method:"FloatOptions32"`
+}
+
+func (e exoticFloatValues) FloatOptions64() []float64 {
+	return []float64{math.NaN(), math.Inf(1), math.Inf(-1)}
+}
+
+func (e exoticFloatValues) FloatOptions32() []float32 {
+	return []float32{float32(math.NaN()), float32(math.Inf(1)), float32(math.Inf(-1))}
+}
+
+func TestFuzzTags_ExoticFloatValues(t *testing.T) {
+	c := newByteConsumer([]byte{})
+	// choose all float64 values
+	c.pushInt64(0, bytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+	// choose all float32 values
+	c.pushInt64(0, bytesForNative)
+	c.pushInt64(1, bytesForNative)
+	c.pushInt64(2, bytesForNative)
+
+	e := &exoticFloatValues{}
+	Fill(e, c.getRawBytes())
+
+	assert.True(t, math.IsNaN(e.Float64Field1))
+	assert.True(t, math.IsInf(e.Float64Field2, 1))
+	assert.True(t, math.IsInf(e.Float64Field3, -1))
+	assert.True(t, math.IsNaN(float64(e.Float32Field1)))
+	assert.True(t, math.IsInf(float64(e.Float32Field2), 1))
+	assert.True(t, math.IsInf(float64(e.Float32Field3), -1))
 }

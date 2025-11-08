@@ -56,8 +56,8 @@ type intMethodStruct struct {
 	IntField int `fuzz-int-method:"IntValues"`
 }
 
-func (s *intMethodStruct) IntValues() []int64 {
-	return []int64{
+func (s *intMethodStruct) IntValues() []int {
+	return []int{
 		-1,
 		-2,
 		-3,
@@ -96,8 +96,8 @@ type uintMethodStruct struct {
 	UintField uint `fuzz-uint-method:"UintValues"`
 }
 
-func (s *uintMethodStruct) UintValues() []uint64 {
-	return []uint64{
+func (s *uintMethodStruct) UintValues() []uint {
+	return []uint{
 		1,
 		2,
 		3,
@@ -237,7 +237,7 @@ func ExampleDescribe_structInStruct() {
 	//*(parentStruct).ValueChild(childStruct).StringField (string)
 	//	range min: 0 max: 20
 	//*(parentStruct).SliceChild ([]*childStruct)
-	//	range min: 0 max: 20
+	//	range min: 0 max: 0
 	//*(parentStruct).PointerChild(*childStruct).BoolField (bool)
 	//*(parentStruct).PointerChild(*childStruct).StringField (string)
 	//	range min: 0 max: 20
@@ -299,6 +299,8 @@ func ExampleDescribe_rootSlice() {
 	}
 
 	Describe(&[]testStruct{})
-	// Output:*[0](testStruct).IntField (int64)
+	// Output:(*[]testStruct)
+	//	range min: 0 max: 0
+	//*[0](testStruct).IntField (int64)
 	//	range min: 0 max: 0
 }
